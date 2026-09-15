@@ -1,0 +1,376 @@
+[
+  {
+    "type": "locucion",
+    "front": "a la postre",
+    "back": "Al final, una vez concluido un proceso; introduce el desenlace tras varias vicisitudes.",
+    "ko": "결국, 마지막에는",
+    "example": "Se barajaron varias candidaturas de peso, pero [[a la postre]] el jurado se decantó por un proyecto que apenas figuraba en las quinielas.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:cultura_arte", "prueba:1", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "al final", "registro": "neutro" },
+      { "texto": "en última instancia", "registro": "culto" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Frecuente en prosa periodística y ensayística; nada que ver con el 'postre' de la comida."
+  },
+  {
+    "type": "locucion",
+    "front": "a regañadientes",
+    "back": "De mala gana, con resistencia manifiesta, cediendo solo por obligación.",
+    "ko": "마지못해, 억지로",
+    "example": "El ministro aceptó [[a regañadientes]] comparecer ante la comisión, consciente de que cualquier evasiva alimentaría las sospechas de la oposición.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:politica_sociedad", "prueba:2", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "de mala gana", "registro": "neutro" },
+      { "texto": "a disgusto", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": ""
+  },
+  {
+    "type": "locucion",
+    "front": "bajo cuerda",
+    "back": "De manera oculta o encubierta, al margen de los cauces oficiales y legales.",
+    "ko": "은밀히, 뒷거래로",
+    "example": "Según la investigación, los contratos se adjudicaron [[bajo cuerda]] a empresas vinculadas a familiares del alcalde, sin concurso público de por medio.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:justicia", "prueba:2", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "a escondidas", "registro": "neutro" },
+      { "texto": "de forma encubierta", "registro": "culto" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "También 'por debajo de cuerda' y, más coloquial, 'por debajo de la mesa'."
+  },
+  {
+    "type": "colocacion",
+    "front": "zanjar un debate",
+    "back": "Poner fin de forma tajante y definitiva a una discusión o cuestión pendiente.",
+    "ko": "논쟁을 매듭짓다",
+    "example": "El tribunal quiso [[zanjar el debate]] sobre la constitucionalidad de la norma con una sentencia unánime que no deja resquicio a nuevas interpretaciones.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:justicia", "prueba:2", "seed"],
+    "colocaciones": ["zanjar una polémica", "zanjar una discusión", "zanjar un asunto", "zanjar la cuestión"],
+    "equivalentes": [
+      { "texto": "poner fin a un debate", "registro": "neutro" },
+      { "texto": "cerrar un debate", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Verbo de alta frecuencia en prensa: 'zanjó la polémica con un comunicado'."
+  },
+  {
+    "type": "colocacion",
+    "front": "esgrimir un argumento",
+    "back": "Presentar una razón como arma dialéctica para defender o atacar una postura.",
+    "ko": "논거를 내세우다",
+    "example": "Los detractores del proyecto [[esgrimen el argumento]] de que la inversión pública debería destinarse a sanidad y no a infraestructuras de dudosa rentabilidad.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:economia_trabajo", "prueba:3", "seed"],
+    "colocaciones": ["esgrimir razones", "esgrimir una excusa", "esgrimir datos", "esgrimir un motivo"],
+    "equivalentes": [
+      { "texto": "aducir un argumento", "registro": "culto" },
+      { "texto": "dar un argumento", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Sentido literal: blandir un arma blanca; de ahí la metáfora."
+  },
+  {
+    "type": "colocacion",
+    "front": "acarrear consecuencias",
+    "back": "Ocasionar o traer consigo efectos, casi siempre negativos o gravosos.",
+    "ko": "결과를 초래하다",
+    "example": "El deshielo acelerado del permafrost puede [[acarrear consecuencias]] imprevisibles para el clima global, ya que libera metano atrapado durante milenios.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:medio_ambiente", "prueba:1", "seed"],
+    "colocaciones": ["acarrear problemas", "acarrear gastos", "acarrear riesgos", "acarrear la ruina"],
+    "equivalentes": [
+      { "texto": "conllevar consecuencias", "registro": "culto" },
+      { "texto": "traer consecuencias", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": ""
+  },
+  {
+    "type": "marcador",
+    "front": "a este respecto",
+    "back": "Conector que introduce un comentario o precisión sobre el asunto recién mencionado.",
+    "ko": "이와 관련하여",
+    "example": "La ley fija plazos máximos de espera; [[a este respecto]], conviene recordar que las comunidades autónomas incumplen sistemáticamente lo previsto.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:salud", "prueba:3", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "en cuanto a esto", "registro": "neutro" },
+      { "texto": "sobre este punto", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Variantes: 'al respecto', 'a ese respecto'. Muy útil para enlazar párrafos en la prueba escrita."
+  },
+  {
+    "type": "marcador",
+    "front": "dicho sea de paso",
+    "back": "Introduce un comentario incidental, al margen del hilo principal del discurso.",
+    "ko": "말이 나온 김에",
+    "example": "El informe, [[dicho sea de paso]], fue encargado por la propia empresa investigada, lo que pone en entredicho su imparcialidad.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:medios", "prueba:1", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "por cierto", "registro": "neutro" },
+      { "texto": "entre paréntesis", "registro": "coloquial" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Va siempre entre comas o pausas."
+  },
+  {
+    "type": "marcador",
+    "front": "con todo",
+    "back": "Conector contraargumentativo: a pesar de lo dicho anteriormente, sin embargo.",
+    "ko": "그럼에도 불구하고",
+    "example": "Los indicadores macroeconómicos son alentadores; [[con todo]], el paro juvenil sigue enquistado en cifras que duplican la media europea.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:economia_trabajo", "prueba:2", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "sin embargo", "registro": "neutro" },
+      { "texto": "no obstante", "registro": "culto" },
+      { "texto": "aun así", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Forma ampliada: 'con todo y con eso'. Suele encabezar la oración."
+  },
+  {
+    "type": "expresion",
+    "front": "no tener desperdicio",
+    "back": "Ser algo muy aprovechable o digno de atención; a menudo irónico, por lo disparatado.",
+    "ko": "놓칠 게 없다, 볼만하다",
+    "example": "La entrevista [[no tiene desperdicio]]: el consejero llega a afirmar que los recortes han mejorado la calidad de la enseñanza pública.",
+    "exampleSource": "redactado",
+    "register": "coloquial",
+    "region": "general",
+    "tags": ["tema:educacion", "prueba:1", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "ser digno de verse", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "El uso irónico es muy frecuente en columnas de opinión y redes sociales."
+  },
+  {
+    "type": "expresion",
+    "front": "hacer oídos sordos",
+    "back": "Negarse deliberadamente a escuchar o atender advertencias, quejas o peticiones.",
+    "ko": "못 들은 척하다",
+    "example": "Durante años las autoridades [[hicieron oídos sordos]] a las advertencias de los geólogos sobre el riesgo de urbanizar la ladera.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:medio_ambiente", "prueba:2", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "desoír", "registro": "culto" },
+      { "texto": "ignorar", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Rige la preposición 'a': hacer oídos sordos a algo."
+  },
+  {
+    "type": "expresion",
+    "front": "poner en tela de juicio",
+    "back": "Cuestionar la veracidad, validez o legitimidad de algo hasta entonces aceptado.",
+    "ko": "의문을 제기하다",
+    "example": "El hallazgo de nuevos manuscritos [[pone en tela de juicio]] la cronología aceptada de la obra y obliga a revisar décadas de estudios filológicos.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:lengua_literatura", "prueba:1", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "cuestionar", "registro": "neutro" },
+      { "texto": "poner en duda", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "También con 'estar/quedar': 'su credibilidad quedó en tela de juicio'."
+  },
+  {
+    "type": "verbo_prep",
+    "front": "atenerse a algo",
+    "back": "Ajustarse o someterse a una norma, orden o hecho, asumiendo sus consecuencias.",
+    "ko": "~에 따르다, 준수하다",
+    "example": "Quien firme el contrato deberá atenerse [[a]] las condiciones pactadas, por muy gravosas que le resulten más adelante.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:consumo", "prueba:3", "seed"],
+    "colocaciones": ["atenerse a las normas", "atenerse a las consecuencias", "atenerse a los hechos"],
+    "equivalentes": [
+      { "texto": "ajustarse a", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Irregular como 'tener': me atengo, se atuvo, aténgase."
+  },
+  {
+    "type": "verbo_prep",
+    "front": "prescindir de algo/alguien",
+    "back": "Renunciar a algo o dejar de contar con ello; excluirlo de forma deliberada.",
+    "ko": "~없이 지내다, 배제하다",
+    "example": "La redacción decidió prescindir [[de]] los corresponsales en el extranjero para recortar costes, con el consiguiente empobrecimiento de la cobertura internacional.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:medios", "prueba:2", "seed"],
+    "colocaciones": ["prescindir de los servicios de alguien", "no poder prescindir de algo"],
+    "equivalentes": [
+      { "texto": "renunciar a", "registro": "neutro" },
+      { "texto": "pasar sin", "registro": "coloquial" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Antónimo derivado muy rentable: 'imprescindible'."
+  },
+  {
+    "type": "refran",
+    "front": "Quien mucho abarca, poco aprieta",
+    "back": "Advierte de que quien emprende demasiadas cosas a la vez no logra ninguna satisfactoriamente.",
+    "ko": "욕심이 과하면 다 놓친다",
+    "example": "Se matriculó en tres másteres, montó una startup y aceptó dar clases: [[quien mucho abarca, poco aprieta]], y a los seis meses lo dejó todo.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "general",
+    "tags": ["tema:educacion", "prueba:3", "seed"],
+    "colocaciones": [],
+    "equivalentes": [],
+    "contraste": "",
+    "source": "seed",
+    "notes": "A menudo se cita solo la primera mitad: 'quien mucho abarca...'."
+  },
+  {
+    "type": "falso_amigo",
+    "front": "eventualmente",
+    "back": "Ocasionalmente, de forma circunstancial o incierta; no significa 'al final' ni 'con el tiempo'.",
+    "ko": "경우에 따라, 어쩌다가",
+    "example": "El servicio de urgencias se refuerza [[eventualmente]] con personal de otras plantas, pero no existe un protocolo estable para los picos de demanda.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:salud", "prueba:1", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "ocasionalmente", "registro": "neutro" },
+      { "texto": "de vez en cuando", "registro": "coloquial" }
+    ],
+    "contraste": "No confundir con el inglés 'eventually' (finalmente, con el tiempo). 'Eventual' = posible o circunstancial: 'contrato eventual', 'una eventual subida de tipos'. El calco se oye en América, pero la norma culta lo rechaza.",
+    "source": "seed",
+    "notes": ""
+  },
+  {
+    "type": "variante",
+    "front": "recién + verbo conjugado",
+    "back": "En el español americano, antepuesto a un verbo conjugado, equivale a 'acabar de' o 'apenas'.",
+    "ko": "방금, 이제 막 (중남미)",
+    "example": "Disculpa la demora: [[recién]] llegué a la oficina y todavía no pude revisar los mensajes que me mandaste anoche.",
+    "exampleSource": "redactado",
+    "register": "neutro",
+    "region": "AM",
+    "tags": ["tema:relaciones", "prueba:3", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "acabar de + infinitivo", "registro": "neutro" }
+    ],
+    "contraste": "En España 'recién' solo precede a participios ('recién pintado', 'recién nacido'); 'recién llegué' se percibe como americanismo. Equivalentes peninsulares: 'acabo de llegar', 'apenas he llegado'.",
+    "source": "seed",
+    "notes": "También 'recién cuando' / 'recién entonces' = 'solo cuando', 'solo entonces'."
+  },
+  {
+    "type": "lexico",
+    "front": "acuciante",
+    "back": "Que apremia o urge; que exige atención inmediata por su gravedad.",
+    "ko": "시급한, 절박한",
+    "example": "La falta de vivienda asequible se ha convertido en el problema más [[acuciante]] de las grandes ciudades, por delante incluso del desempleo.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:ciudad_viajes", "prueba:1", "seed"],
+    "colocaciones": ["problema acuciante", "necesidad acuciante", "cuestión acuciante", "cada vez más acuciante"],
+    "equivalentes": [
+      { "texto": "apremiante", "registro": "culto" },
+      { "texto": "urgente", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Del verbo 'acuciar' (apremiar, estimular); familia: 'acucia', 'acuciado por las deudas'."
+  },
+  {
+    "type": "estructura",
+    "front": "de + infinitivo (valor condicional)",
+    "back": "Construcción condicional culta: 'de + infinitivo' equivale a 'si + verbo conjugado', con condición real o irreal.",
+    "ko": "만약 ~한다면/했더라면",
+    "example": "[[De haberse aprobado]] la reforma a tiempo, miles de pequeñas empresas habrían evitado la quiebra que arrastran desde la pandemia.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:economia_trabajo", "prueba:2", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "si se hubiera aprobado", "registro": "neutro" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Con infinitivo compuesto, condición irreal de pasado; con infinitivo simple, condición abierta: 'de seguir así, quebrará'."
+  },
+  {
+    "type": "otro",
+    "front": "grosso modo",
+    "back": "Latinismo: aproximadamente, a grandes rasgos. Se escribe sin preposición; 'a grosso modo' es incorrecto.",
+    "ko": "대략, 개략적으로",
+    "example": "[[Grosso modo]], el presupuesto se reparte en tres partidas: investigación básica, transferencia tecnológica y becas para jóvenes doctores.",
+    "exampleSource": "redactado",
+    "register": "culto",
+    "region": "general",
+    "tags": ["tema:ciencia_tecnologia", "prueba:3", "seed"],
+    "colocaciones": [],
+    "equivalentes": [
+      { "texto": "a grandes rasgos", "registro": "neutro" },
+      { "texto": "más o menos", "registro": "coloquial" }
+    ],
+    "contraste": "",
+    "source": "seed",
+    "notes": "Latinismo crudo: en textos cuidados va en cursiva. Otros útiles: 'ipso facto', 'a priori', 'motu proprio' (sin 'de')."
+  }
+]

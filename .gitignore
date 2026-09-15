@@ -1,0 +1,5 @@
+exports/
+imports/
+*.local.json
+Thumbs.db
+.DS_Store

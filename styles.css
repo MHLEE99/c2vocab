@@ -1,0 +1,684 @@
+/* c2vocab — mobile-first, iOS-safe styles. Desktop (>= 800px) gets a centred 720px column. */
+
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #1c1f24;
+  --muted: #6b7280;
+  --border: #dfe3e8;
+  --primary: #1f5f8b;
+  --primary-dark: #174a6d;
+  --primary-soft: #e3eef6;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --warn: #8a5a00;
+  --warn-soft: #fff4d6;
+  --ok: #1b7f4b;
+  --radius: 12px;
+  --nav-height: 60px;
+  --topbar-height: 52px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --content-max: 720px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Author `display` rules below would otherwise beat the UA [hidden] rule. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.sheet-open {
+  overflow: hidden;
+}
+
+/* ---------- layout ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding-top: var(--safe-top);
+  padding-left: calc(16px + var(--safe-left));
+  padding-right: calc(16px + var(--safe-right));
+}
+
+.topbar-title {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.view {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-left: calc(16px + var(--safe-left));
+  padding-right: calc(16px + var(--safe-right));
+  padding-top: 16px;
+  /* keep content clear of the fixed nav and the FAB */
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 96px);
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+.nav-item {
+  flex: 1;
+  min-height: var(--nav-height);
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.nav-item svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.nav-item.nav-active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.fab {
+  position: fixed;
+  right: calc(16px + var(--safe-right));
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  z-index: 25;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.fab:active {
+  background: var(--primary-dark);
+}
+
+@media (min-width: 800px) {
+  .fab {
+    right: calc(50% - var(--content-max) / 2 + 16px);
+  }
+}
+
+/* ---------- generic controls ---------- */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 44px;
+  font-size: 16px; /* >= 16px prevents iOS Safari auto-zoom */
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:active {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-big {
+  min-height: 56px;
+  font-size: 18px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.btn-row .btn {
+  flex: 1 1 140px;
+}
+
+/* ---------- chips & badges ---------- */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.chip {
+  min-height: 44px; /* iOS tap target */
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Korean gloss of the active chip (tooltips are hover-only, so it is shown inline). */
+.chip-gloss {
+  font-size: 13px;
+  color: var(--muted);
+  margin: -2px 0 6px;
+  min-height: 18px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 18px;
+  background: #eef0f3;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.badge-inbox {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.badge-type {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.badge-suspended {
+  background: #ececec;
+  color: #555;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #eef0f3;
+  color: var(--muted);
+  margin: 2px 4px 2px 0;
+}
+
+/* ---------- text helpers ---------- */
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.hint-ko {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 10px;
+  white-space: pre-line;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.warn-text {
+  color: var(--warn);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 18px 0 6px;
+}
+
+.empty {
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.count-line {
+  margin: 10px 0 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ---------- home ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- card list (Explorar / Papelera) ---------- */
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.card-expanded {
+  border-color: var(--primary);
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.card-front {
+  font-weight: 600;
+  font-size: 17px;
+  margin-right: auto;
+}
+
+.card-body {
+  margin-top: 6px;
+}
+
+.card-back {
+  margin: 2px 0;
+}
+
+.card-ko {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 2px 0;
+}
+
+.card-example {
+  margin: 4px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.gap {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.card-tags {
+  margin-top: 4px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.card-actions .btn {
+  flex: 1;
+}
+
+.card-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ---------- forms ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: default;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field > label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.search {
+  margin-bottom: 4px;
+}
+
+.filter-block {
+  margin: 4px 0;
+}
+
+.filter-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ---------- quick add preview ---------- */
+
+.preview {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 14px;
+}
+
+.preview-item.preview-dup {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.preview-front {
+  font-weight: 600;
+}
+
+.preview-back {
+  color: var(--muted);
+  flex-basis: 100%;
+}
+
+.preview-warn {
+  color: var(--warn);
+  font-size: 13px;
+  flex-basis: 100%;
+}
+
+details.help summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 14px;
+  min-height: 44px; /* iOS tap target */
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- toast ---------- */
+
+.toast-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* On phones the toast spans the width, so it sits above the 56px FAB
+     (FAB bottom = nav + safe + 16px) instead of covering it. */
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px + 56px + 12px);
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+@media (min-width: 800px) {
+  /* The FAB sits in the column gutter here, clear of the centred 480px toast. */
+  .toast-root {
+    bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+  }
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 480px;
+  width: 100%;
+  background: #2b2f36;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  font-size: 15px;
+}
+
+.toast-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-action {
+  min-height: 44px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  color: #ffd66b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- bottom sheet ---------- */
+
+.sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* iOS Safari ignores body overflow:hidden for touch scrolling; block drags on the backdrop. */
+  touch-action: none;
+}
+
+.sheet {
+  width: 100%;
+  max-height: calc(100vh - var(--safe-top) - 24px);
+  max-height: calc(100dvh - var(--safe-top) - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; /* over-scrolling the sheet must not scroll the page behind */
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  /* The safe-area inset lives on .sheet-actions (sticky) so the buttons stay above it. */
+  padding: 16px calc(16px + var(--safe-right)) 16px calc(16px + var(--safe-left));
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.sheet-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  padding-top: 8px;
+  padding-bottom: calc(8px + var(--safe-bottom));
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}
+
+@media (min-width: 800px) {
+  .sheet-backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    max-width: 640px;
+    max-height: 90vh;
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+}

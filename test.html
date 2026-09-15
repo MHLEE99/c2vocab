@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>c2vocab tests</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f5f6f8; color: #1c1f24; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    #summary { font-weight: 700; font-size: 18px; margin: 8px 0 16px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { padding: 8px 10px; margin-bottom: 4px; border-radius: 8px; background: #fff; font-family: ui-monospace, Consolas, monospace; font-size: 14px; white-space: pre-wrap; }
+    .pass { color: #1b7f4b; }
+    .fail { color: #b3261e; }
+    li.pass { border-left: 4px solid #1b7f4b; }
+    li.fail { border-left: 4px solid #b3261e; }
+    p.note { color: #6b7280; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>c2vocab — pruebas</h1>
+  <p class="note">Las pruebas de base de datos usan «c2vocab_test», nunca la base real. <a href="./index.html">Volver a la app</a></p>
+  <p id="summary">Ejecutando…</p>
+  <ul id="results"></ul>
+
+  <script src="./vendor/dexie.min.js"></script>
+  <script type="module" src="./js/tests.js"></script>
+</body>
+</html>
