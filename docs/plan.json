@@ -1,0 +1,380 @@
+{
+  "recommended_stack": "Vanilla HTML/CSS/JavaScript (ES modules) PWA, no build step, no Node. One vendored library: Dexie 4.x (IndexedDB) downloaded once into /vendor. Own SM-2 scheduler (srs.js, pure function, replayable from an append-only review log; algorithm version stored so FSRS can be swapped in later). Local run: start.bat -> `python -m http.server 8080`. Deploy: git push -> GitHub Pages (HTTPS). Phone: open the Pages URL, 'Add to Home Screen'. Offline: versioned service worker (not registered on localhost). Backup/sync: JSON export via Web Share/download, in-app snapshot ring buffer, then Dropbox HTTP API with plain fetch (App-folder scope, PKCE 'copy the code' OAuth, one snapshot file per device, merge on read). Tests: test.html in the browser + tools/verify_export.py with the installed Python.",
+  "why": "이 PC에는 git과 Python만 있고 Node가 없는데, 프레임워크나 Capacitor를 쓰면 설치·빌드·버전 충돌이라는 새로운 고장 지점이 생깁니다. 빌드 없는 순수 HTML/JS PWA는 이미 있는 Python으로 바로 실행되고, git push 한 번으로 GitHub Pages에 올라가며, 폰에서는 브라우저의 '홈 화면에 추가'만으로 앱처럼 설치되어 오프라인에서도 동작합니다. 데이터는 브라우저 안의 IndexedDB(Dexie)에 저장하고, 삭제는 휴지통(tombstone) 방식, 복습 기록은 지우지 않는 로그 방식이라 실수나 기기 두 대 동시 사용으로 진도가 사라지지 않습니다. 동기화는 이미 쓰고 계신 Dropbox의 앱 전용 폴더를 사용하므로 새 계정·서버·유료 서비스가 필요 없고, 파일 형태라 직접 열어 보고 복사해 둘 수도 있습니다. 심사 결과를 반영해 순서를 바꿔, 1단계부터 PC에서 단어를 모으고 2단계부터 실제 복습을 시작하며, 3단계에서 내보내기/Claude 대량 붙여넣기, 4단계에서 폰 설치가 됩니다. 알고리즘은 이해하기 쉽고 파라미터 맞춤이 필요 없는 SM-2로 시작하되, 로그를 그대로 재생해 나중에 FSRS로 바꿀 수 있게 설계합니다.",
+  "alternatives_rejected": [
+    {
+      "option": "React/Vite/Svelte PWA (Node 필요)",
+      "why_not": "Node·npm 설치, node_modules, 빌드 오류가 비개발자에게 가장 흔한 '갑자기 안 됨' 원인입니다. 플래시카드 앱은 화면이 몇 개뿐이라 프레임워크가 주는 이득이 없습니다."
+    },
+    {
+      "option": "Capacitor / Expo / React Native",
+      "why_not": "Node에 더해 Android Studio가 필요하고, iOS는 Windows에서 빌드가 불가능합니다. 스토어 배포 없이도 PWA가 폰 설치·오프라인을 이미 해결합니다."
+    },
+    {
+      "option": "Flet / Kivy (Python)",
+      "why_not": "웹 출력이 무겁고 모바일 패키징이 가장 어려운 부분입니다. Python이 있다는 장점은 http.server와 검증 스크립트로 충분히 활용합니다."
+    },
+    {
+      "option": "Supabase / Firebase 동기화",
+      "why_not": "새 계정, 서버 쪽 테이블·RLS 정책, 이메일 로그인이 필요하고 Supabase 무료 프로젝트는 일주일 방치 시 정지됩니다. 2년간 혼자 유지할 부담이 가장 큽니다."
+    },
+    {
+      "option": "GitHub gist 동기화",
+      "why_not": "개인 액세스 토큰을 폰 브라우저에 붙여 넣어야 하고 secret gist는 '숨김'일 뿐 비공개가 아닙니다."
+    },
+    {
+      "option": "Dropbox redirect-URI OAuth + 공유 파일 1개",
+      "why_not": "설치된 iOS PWA에서 리디렉트가 Safari로 새어 나가 로그인이 깨질 수 있고, 두 기기가 같은 파일을 쓰면 'conflicted copy'가 생깁니다. 대신 '코드 복사' 방식 + 기기별 파일을 씁니다."
+    },
+    {
+      "option": "FSRS를 지금 직접 구현",
+      "why_not": "19개 가중치 수식은 손으로 검증하기 어렵고 버그가 조용히 스케줄을 바꿉니다. SM-2로 시작하고 로그를 남겨 두면 나중에 같은 로그로 FSRS 재생이 가능합니다."
+    },
+    {
+      "option": "File System Access API로 PC 폴더에 자동 백업",
+      "why_not": "세션마다 폴더 권한을 다시 묻는 경우가 많고 Chrome/Edge 전용이라 '조용한 백업'이 아닙니다. Dropbox API 동기화가 그 역할을 대신하며, 나중에 선택 기능으로만 검토합니다."
+    },
+    {
+      "option": "idb-keyval + 단일 JSON 문서 저장",
+      "why_not": "CDN에서 런타임 로드하면 오프라인 첫 실행이 깨질 수 있고, 카드 하나 평가할 때마다 전체 문서를 다시 쓰는 구조는 수천 장 이후 느려지며 저장 구조 변경에 마이그레이션 틀이 없습니다."
+    },
+    {
+      "option": "localStorage",
+      "why_not": "약 5MB 한도, 문자열 전용, 트랜잭션·인덱스·버전 관리가 없어 '데이터를 잃지 않는다'는 요구를 만족하기 어렵습니다."
+    }
+  ],
+  "setup_needed": [
+    "설치할 것 없음: git 2.55과 Python 3.12로 충분합니다. Node는 어느 단계에서도 필요 없습니다.",
+    "git 사용자 정보 1회 설정 (4단계 전, 사용자가 실행하거나 승인): git config --global user.name \"이름\" / git config --global user.email \"mooohyuk@gmail.com\"",
+    "GitHub 무료 계정 + 빈 공개 저장소(예: c2vocab) 생성 (4단계, 브라우저에서 사용자가 직접). 첫 git push 때 Git Credential Manager가 브라우저 로그인을 띄우면 사용자가 로그인합니다. 공개 저장소에는 코드와 seed 덱만 올라가고 개인 데이터는 .gitignore로 제외됩니다.",
+    "GitHub Pages 켜기 (4단계): 저장소 Settings -> Pages -> Deploy from branch: main / (root). 여기서 나오는 HTTPS 주소가 폰 설치와 오프라인 동작에 필요합니다.",
+    "폰: Chrome(Android) 또는 Safari(iOS 16.4+)로 Pages 주소를 한 번 열고 '홈 화면에 추가'. iOS는 반드시 홈 화면에 설치해야 7일 미사용 시 데이터 삭제를 피할 수 있습니다.",
+    "Dropbox 개발자 앱 1개 (8단계, 기존 Dropbox 계정으로 브라우저에서 약 3분): dropbox.com/developers/apps -> Create app -> Scoped access -> App folder -> 이름 예: c2vocab-moo -> Permissions 탭에서 files.metadata.read, files.content.read, files.content.write 켜기 -> App key를 config.js에 붙여넣기. Redirect URI는 필요 없고 Development 모드 그대로 둡니다. App key는 비밀이 아닙니다(PKCE).",
+    "선택: 같은 Wi-Fi에서 폰 UI를 빨리 확인하려면 python -m http.server 8080 --bind 0.0.0.0 후 폰에서 http://<PC-IP>:8080 (Windows 방화벽이 물으면 허용). 설치·오프라인은 HTTPS Pages 주소에서만 됩니다."
+  ],
+  "mvp_features": [
+    "빠른 추가: 한 칸짜리 입력창 (1행 = 표현, 이후 줄에 ': 정의', '= 한국어', '> 예문 (표현은 [[...]]로 표시, 없으면 자동 탐색)', '# 태그', '@ 출처') 또는 한 줄 형식 'lema :: definición | ejemplo'. type/register 칩은 마지막 선택을 기억. 표현만 적으면 Bandeja(inbox)로 저장되어 입력이 막히지 않음",
+    "카드 목록 = 개인 사전: 악센트 무시 즉시 검색, type/register/tag/상태/'sin ejemplo' 필터, 인라인 수정, 소프트 삭제 + Papelera(휴지통) 복원",
+    "일일 복습 (SM-2): due + 하루 신규 N장, 4단계 평가 Otra vez / Difícil / Bien / Fácil, 버튼마다 다음 간격 표시, PC 키 1-4 & Space, 폰 큰 터치 버튼, 마지막 평가 취소(deshacer), 세션 요약, 새벽 4시 기준 하루 경계",
+    "같은 세션 내 재출현: Otra vez 카드는 타이머와 상관없이 8장 뒤에 다시 나옴 (짧은 폰 세션에서도 학습이 끝남)",
+    "두 방향 학습: reconocimiento(표현 -> 뜻)와 producción/cloze(예문 빈칸 -> 표현)를 카드마다 독립된 SRS 상태로 관리. producción은 reconocimiento가 한 번 Bien을 받은 뒤 잠금 해제(단계적 도입), 같은 날 두 방향이 함께 나오지 않음(sibling burying). verbo_prep 유형은 전치사만 빈칸",
+    "홈 화면: 큰 'Estudiar' 버튼 하나 + 오늘 due/새 카드/완료 수, 연속 학습일(streak)",
+    "대량 가져오기: Claude 출력(JSON 배열/envelope), TSV(front, back, example, type, tags), 파이프 한 줄 형식 모두 붙여넣기 가능. 미리보기에서 신규/중복/오류 행 표시, 중복은 normalize(front)+type 기준, 모드: Omitir / Enriquecer(빈 칸만 채움) / Sobrescribir(내용만, SRS·기록은 절대 안 건드림)",
+    "내보내기/가져오기: 한 번에 전체 JSON 내보내기 (폰은 공유 시트 -> Files/Dropbox/카톡 나에게, PC는 다운로드), 가져오기는 항상 병합(merge)이며 같은 파일을 두 번 넣어도 변화 없음(idempotent)",
+    "앱 내 백업 링 버퍼: 학습 세션 후·가져오기 전·마이그레이션 전 자동 스냅샷(최근 10개), 'Restaurar copia' 화면",
+    "7일 이상 내보내기/동기화가 없으면 알림 배너, 첫 실행 시 navigator.storage.persist() 요청 및 결과 표시",
+    "PWA: manifest + 버전 관리 service worker(localhost에서는 미등록), 오프라인 완전 동작, '새 버전 있음, 새로고침' 배너, seed 덱 'Cargar ejemplos' 버튼으로 첫날부터 빈 앱이 아님",
+    "Dropbox 동기화: 기기마다 한 번 연결(코드 복사 OAuth), 앱 열 때/세션 후/백그라운드 진입 시/수동 버튼 자동 동기화, 상태줄 'Última sincronización: hace 3 min · 2 dispositivos'",
+    "진도: 오늘 학습량, streak, 상태별 카드 수(nuevas/aprendiendo/repaso/dominadas), 30일 due 예측, 태그·type별 숙련도, 최근 30일 retention, DELE prueba/tema별 커버리지",
+    "학습량 조절 설정: newPerDay(15), 세션 예산(15분, 남은 카드 수 표시), 밀린 복습이 3일치를 넘으면 신규 카드 자동 일시정지, 시험일 입력 시 마지막 7일 신규 0장 + 최대 간격을 시험일까지로 제한",
+    "스키마 버전 관리: meta.schemaVersion, migrations.js를 DB 업그레이드·가져오기·동기화가 공유, 더 새로운 스키마 파일은 'Actualiza la app' 안내로 거부"
+  ],
+  "later_features": [
+    "타이핑 답변 모드 (producción): 악센트·구두점 무시 비교, 완전 일치=Bien, 악센트/한 글자 실수=Difícil(차이 강조), 그 외=Otra vez, 한 번 탭으로 Fácil 승격",
+    "Repaso libre / cram: 태그·type별로 SRS 영향 없이 넘겨보기 (reviews.mode='cram'), 'Examen simulado' 무작위 30장",
+    "Cloze 4지선다 (Prueba 1 스타일): 같은 tema/type 카드에서 오답 보기 자동 추출, 틀리면 contraste 줄 표시",
+    "Reformulación de registro: equivalentes 필드로 coloquial <-> culto 바꿔 말하기 연습 (Prueba 2/3)",
+    "Lista de producción: tema별 곧 나올 activa 카드 15-20장을 Markdown 체크리스트로 복사해 그날 redacción/exposición oral에 강제로 사용, 체크하면 mode='produccion'으로 기록",
+    "speechSynthesis (es-ES / es-MX) 예문 읽어주기, 나중에 dictado 모드",
+    "Android share_target: 아무 앱에서 텍스트 선택 -> 공유 -> C2 Vocab Bandeja로 (iOS는 붙여넣기)",
+    "'Exportar bandeja para Claude' -> Claude가 정의·예문을 채운 JSON을 다시 가져오면 id 기준으로 빈 칸만 채움",
+    "Leech 관리: lapses 8회 카드 자동 보류 + 'Clínica' 화면에서 예문 다시 쓰기/한국어 기억법/혼동 카드 연결 중 하나를 골라 복구",
+    "카드 관계: 'ver también', sinónimo/antónimo, confusable_with -> 대비(Contrast) 카드",
+    "FSRS 교체: 로그를 새 알고리즘으로 재생 (meta.algo 버전), 필요하면 pip fsrs-optimizer로 개인 가중치 산출 (PyTorch 설치가 무거우므로 선택)",
+    "동기화 스냅샷 gzip 압축 (CompressionStream), 로그가 ~5MB 넘을 때",
+    "보조 동기화 대상: PC Chrome/Edge에서 File System Access API로 Dropbox 로컬 폴더에 백업 파일 쓰기 (같은 merge 모듈 재사용)",
+    "다크 모드, UI 언어 토글(es/ko), 키보드 단축키 안내판, 읽기 동반 캡처(문단 붙여넣고 단어 탭 -> 예문 자동 채움)"
+  ],
+  "card_schema": [
+    {
+      "field": "id",
+      "type": "string (UUID, crypto.randomUUID)",
+      "required": true,
+      "note": "Primary key. Import may omit; app assigns."
+    },
+    {
+      "field": "type",
+      "type": "enum: locucion | colocacion | refran | marcador | falso_amigo | verbo_prep | variante | expresion | lexico | estructura | otro",
+      "required": true,
+      "note": "Drives filters, stats, cloze behaviour (verbo_prep gaps only the preposition)."
+    },
+    {
+      "field": "front",
+      "type": "string",
+      "required": true,
+      "note": "Spanish lema in canonical form (infinitive, singular, full refrán). 'alguien/algo' markers allowed."
+    },
+    {
+      "field": "back",
+      "type": "string",
+      "required": true,
+      "note": "Spanish C2 definition/usage (monolingual, <=25 words suggested). Empty allowed only while status='inbox'."
+    },
+    {
+      "field": "ko",
+      "type": "string",
+      "required": false,
+      "note": "Korean gloss, <=6 words; shown as hint on producción front."
+    },
+    {
+      "field": "example",
+      "type": "string",
+      "required": false,
+      "note": "15-35 words; gap marked [[...]] (verbo_prep: mark preposition, e.g. insistió [[en]] que). If no marker, app auto-locates front; if not found, producción disabled and card appears under 'sin ejemplo'."
+    },
+    {
+      "field": "exampleSource",
+      "type": "string",
+      "required": false,
+      "note": "Real source when pasted from a text; MUST be 'redactado' when Claude wrote it (no invented citations)."
+    },
+    {
+      "field": "exampleVerified",
+      "type": "boolean (default false)",
+      "required": false,
+      "note": "Claude-generated sentences are provisional until the learner ticks them during a review."
+    },
+    {
+      "field": "register",
+      "type": "enum: culto | neutro | coloquial | vulgar",
+      "required": false,
+      "note": "Chips in quick add; extra nuance (periodístico, jurídico...) goes in tags."
+    },
+    {
+      "field": "region",
+      "type": "string",
+      "required": false,
+      "note": "'ES','MX','AR','CO','RioPlata','general'. Free string, suggested list."
+    },
+    {
+      "field": "tags",
+      "type": "string[] (default [])",
+      "required": false,
+      "note": "Free text with autocomplete. Conventions: tema:economía, prueba:1, lectura-Cortázar, clase-2026-09-15, claude-<lista>."
+    },
+    {
+      "field": "colocaciones",
+      "type": "string[]",
+      "required": false,
+      "note": "2-4 items, e.g. 'hacer/poner hincapié en'."
+    },
+    {
+      "field": "equivalentes",
+      "type": "{texto: string, registro: enum}[]",
+      "required": false,
+      "note": "Same meaning in another register; powers reformulación mode."
+    },
+    {
+      "field": "contraste",
+      "type": "string",
+      "required": false,
+      "note": "'No confundir con...' line; expected for falso_amigo and variante."
+    },
+    {
+      "field": "source",
+      "type": "string",
+      "required": false,
+      "note": "Where the user met it (clase, obra, 'lista Claude: economía')."
+    },
+    {
+      "field": "notes",
+      "type": "string (Markdown)",
+      "required": false,
+      "note": "Etymology, mnemonics, Korean-specific pitfalls."
+    },
+    {
+      "field": "direction",
+      "type": "enum: both | rec | prod (default both)",
+      "required": false,
+      "note": "prod additionally requires an example and is unlocked after rec gets one Bien."
+    },
+    {
+      "field": "status",
+      "type": "enum: inbox | active | suspended (default active)",
+      "required": true,
+      "note": "inbox = front-only capture, never scheduled. Derived display state (nueva/aprendiendo/repaso/dominada) is computed from srs, not stored."
+    },
+    {
+      "field": "createdAt / updatedAt",
+      "type": "ISO string",
+      "required": true,
+      "note": "updatedAt bumped on any content edit; last-writer-wins key for merge."
+    },
+    {
+      "field": "deletedAt",
+      "type": "ISO string | null",
+      "required": true,
+      "note": "Tombstone; never hard-deleted; Papelera restores by setting null (and bumping updatedAt)."
+    },
+    {
+      "field": "srs",
+      "type": "{ rec: SrsState, prod: SrsState }",
+      "required": true,
+      "note": "SrsState = { state: new|learning|review|relearning, due: ISO, intervalDays, ease (2.5 default, min 1.3), step, reps, lapses, lastReviewAt }. CACHE recomputable by replaying reviews."
+    },
+    {
+      "field": "reviews (table, append-only)",
+      "type": "{ id: UUID, cardId, dir: rec|prod, ts: ISO, rating: 1-4, mode: srs|cram|quiz|produccion|dictado, deviceId, stateBefore, elapsedDays, scheduledDays, elapsedMs? }",
+      "required": true,
+      "note": "Source of truth. Unioned by id on merge; only mode='srs' affects scheduling; fields sufficient for a later FSRS replay/optimizer export."
+    },
+    {
+      "field": "meta (table)",
+      "type": "{ key, value }",
+      "required": true,
+      "note": "schemaVersion, deviceId, deviceName, algo {name:'sm2', version:1}, settings {newPerDay:15, maxReviewsPerDay:200, sessionMinutes:15, learningSteps:[10,1440], dayBoundaryHour:4, examDate?, lastExportAt, lastSyncAt}, sync file revs."
+    },
+    {
+      "field": "backups (table)",
+      "type": "{ id: autoinc, createdAt, reason, json: string }",
+      "required": true,
+      "note": "Ring buffer of 10 full envelopes (after session, before import/migration/restore)."
+    },
+    {
+      "field": "export envelope",
+      "type": "{ app:'c2vocab', schemaVersion, exportedAt, deviceId, deviceName, cards: Card[], reviews: Review[], settings }",
+      "required": true,
+      "note": "Same document used by export, import, backups and Dropbox snapshots. Unknown fields preserved on read (lenient read, strict write)."
+    }
+  ],
+  "srs": "알고리즘: SM-2 (Anki식 변형)를 srs.js에 직접 구현합니다 (순수 함수 next(state, rating, nowIso, settings, cardId) -> state, 약 80줄, 라이브러리 없음). 이유: 이해하기 쉽고, 맞춰야 할 가중치가 없고, 결정적(deterministic)이라 append-only 복습 로그를 재생(replay)하면 언제든 같은 상태가 나옵니다. 이 재생 가능성이 두 기기 병합을 충돌 없이 만드는 핵심입니다. meta.algo에 {name:'sm2', version:1}을 저장하고 fuzz(±5%)는 cardId로 seed하여 재생이 항상 같게 나오게 합니다. 나중에 FSRS로 바꾸고 싶으면 로그를 새 버전으로 재생하면 됩니다 (로그에 stateBefore/elapsedDays/scheduledDays를 기록해 두므로 fsrs-optimizer 내보내기도 가능). 파라미터: learningSteps [10분, 1일], graduating interval 1일(Bien)/4일(Fácil), 시작 ease 2.5, 최소 1.3, hard 배수 1.2, easy 보너스 1.3, lapse 시 relearning 10분 + 새 간격 max(1, old×0.5) + ease −0.20, 최대 간격 365일(시험일 설정 시 시험일까지로 제한). 평가 버튼 4개(각 버튼에 다음 간격 표시, PC는 1-4 키, Space로 뒤집기): 1 Otra vez -> lapse/step 초기화, ease −0.20 · 2 Difícil -> 간격×1.2, ease −0.15 · 3 Bien -> 간격×ease · 4 Fácil -> 간격×ease×1.3, ease +0.15. 세션 큐: learning(타이머 경과) -> due 복습(오래된 순, 같은 날은 섞음) -> 신규(createdAt 순, newPerDay 상한) 순서로, 신규는 복습 3장당 1장 끼워 넣기. Otra vez 카드는 10분 타이머와 무관하게 최소 8장 뒤에 같은 세션에서 다시 나옵니다(짧은 폰 세션 대응; 모든 평가는 로그에 기록·재생됩니다). 방향: rec와 prod가 독립 스케줄이며 prod는 rec가 한 번 Bien 이상을 받은 뒤 큐에 들어가고(단계적 도입), 같은 카드의 두 방향은 같은 날 함께 나오지 않습니다. 하루 한도: newPerDay 15, maxReviewsPerDay 200, 세션 예산 15분(남은 카드 수 표시), 밀린 due가 3일치(newPerDay×3×2 정도)를 넘으면 신규 자동 정지, 시험일 7일 전부터 신규 0. 하루 경계 새벽 4시. lapses 8회면 leech 태그(나중 단계에서 Clínica). 마지막 평가 취소(deshacer): 마지막 review 행 삭제 + 이전 srs 스냅샷 복원.",
+  "study_modes": [
+    "Repaso diario: rec + prod 혼합 due 큐, 4버튼 평가, 세션 요약 (2단계부터)",
+    "Nuevas del día: 그날 신규 N장만 도입 (대량 가져오기 직후 유용)",
+    "Reconocimiento: 표현 -> 정의·register·region·예문 (2단계)",
+    "Producción (cloze): 예문 빈칸 + 한국어 힌트 -> 표현 떠올리기 -> 공개; verbo_prep은 전치사만 빈칸 (5단계, C2 핵심 모드)",
+    "Explorar: 검색·필터·인라인 수정, 개인 사전 역할 (1단계)",
+    "Bandeja (inbox): 표현만 적어둔 카드에 정의/예문을 한 화면에서 채우기, 'Exportar bandeja para Claude' (5·10단계)",
+    "Estadísticas: streak, 오늘, 상태별 수, 30일 due 예측, 태그별 숙련도, retention, prueba/tema 커버리지 (7단계)",
+    "Repaso libre / cram: 태그·type별, SRS 영향 없음 (11단계)",
+    "Cloze 4지선다, Reformulación de registro, Lista de producción, Dictado (TTS) — DELE prueba별 훈련 (11단계)",
+    "Escritura típica (선택, 나중): 곧 나올 카드 5장으로 80-120단어 미니 작문 후 'Copiar para Claude' 첨삭"
+  ],
+  "content_taxonomy": [
+    "type=locucion — 관용적 구 (a raíz de, en aras de)",
+    "type=colocacion — 연어 (hacer hincapié en, cobrar importancia)",
+    "type=refran — 속담·격언 (a buenas horas, mangas verdes)",
+    "type=marcador — 담화 표지 (no obstante, en cualquier caso, dicho esto)",
+    "type=falso_amigo — 거짓 짝 (contraste 줄 필수)",
+    "type=verbo_prep — 전치사 동반 동사 (insistir en, atenerse a); cloze는 전치사만",
+    "type=variante — 중남미 변이형·americanismo (region 필수 권장, contraste로 스페인식과 대비)",
+    "type=expresion — 관용 표현 (dar en el clavo, estirar la pata)",
+    "type=lexico — 고급 어휘·cultismo (sesgo, dilucidar)",
+    "type=estructura — 고급 통사 구조 (de haberlo sabido, por más que + subj.)",
+    "type=otro — 기타",
+    "register=culto — 격식·문어체",
+    "register=neutro — 중립",
+    "register=coloquial — 구어체",
+    "register=vulgar — 비속",
+    "region=ES / MX / AR / CO / RioPlata / general — 지역 (자유 문자열, 추천 목록)",
+    "tag tema:* — DELE 주제 (ciencia_tecnología, medio_ambiente, economía_trabajo, política_sociedad, educación, salud, cultura_arte, medios, historia, relaciones, lengua_literatura, justicia, ciudad_viajes, consumo) — 자동완성 추천, 강제 아님",
+    "tag prueba:1 / prueba:2 / prueba:3 — DELE C2 시험 파트 연결 (1 uso de la lengua, 2 escrita, 3 oral)",
+    "tag lectura-<obra> / clase-<fecha> / claude-<lista> / modelo-<año> — 출처 태그",
+    "tag leech — lapses 8회 자동 부착 (Clínica 대상)"
+  ],
+  "content_pipeline": "세 가지 입구가 모두 같은 cards 테이블로 들어갑니다(UUID·타임스탬프 자동). (1) 수동 빠른 추가(1단계): 화면 어디서나 '+' -> 한 칸 입력창. 1행에 표현, 이어서 ': 정의', '= 한국어', '> 예문([[빈칸]] 표시, 없으면 자동 탐색)', '# 태그', '@ 출처' 또는 한 줄 'lema :: definición | ejemplo'. type/register 칩은 마지막 선택을 기억, 태그는 기존 태그 자동완성. 표현만 적으면 Bandeja(inbox)로 저장되어 수업·독서 중 캡처가 절대 막히지 않고, 정의만 있으면 rec 학습이 바로 가능하며 예문이 생기면 prod가 열립니다. Android는 나중에 공유 시트(share_target)로 바로 캡처. (2) Claude 대량 생성(3단계, 주 경로): docs/PROMPT.md에 복사용 프롬프트 템플릿을 두고, 앱의 'Copiar prompt' 버튼이 스키마·enum 목록·품질 규칙(정의 25단어 이내 단일어, 예문 15-35단어에 [[빈칸]], register 필수, colocaciones 2-4개, falso_amigo/variante는 contraste 필수, Claude가 쓴 예문은 exampleSource='redactado', 인용 조작 금지) + 현재 Bandeja 표현 목록을 자동으로 넣어줍니다. Claude 답을 Importar에 붙여넣으면 JSON 배열/envelope/TSV/파이프 한 줄 형식을 자동 감지하고, 미리보기에 신규/중복/오류 행이 표시됩니다. 중복은 normalize(front)+type 기준이며 Omitir / Enriquecer(빈 칸만 채움, 기본) / Sobrescribir(내용만, SRS·복습 기록은 절대 안 건드림) 중 선택. 프로젝트 CLAUDE.md에 같은 JSON 계약을 적어 두어 Claude Code가 PC에서 imports/2026-09-20-economia.json을 직접 써 주면 파일 선택으로 가져올 수도 있습니다. (3) 전체 내보내기 파일 가져오기: 항상 병합, 같은 파일을 두 번 넣어도 변화 없음. seeds/ 폴더에 Claude가 만든 주제별 덱(marcadores, locuciones, falsos amigos, variantes)을 두고 'Cargar ejemplos'로 한 번에 가져옵니다(공개 저장소에 올라가지만 개인 데이터가 아닌 어휘). 주간 리듬: 평일에 10-30개 캡처 -> 주말에 'Exportar bandeja' -> Claude가 채운 JSON 재가져오기 -> 매일 10-15분 복습.",
+  "data_safety_and_sync": "저장: IndexedDB(Dexie, 테이블 cards/reviews/meta/backups). 첫 실행 시 navigator.storage.persist() 요청 후 결과 표시, iOS는 홈 화면 설치를 강하게 안내. 삭제는 deletedAt 표시만 하는 소프트 삭제 + Papelera 복원, 절대 물리 삭제 없음. 여러 레코드 쓰기는 하나의 Dexie 트랜잭션. 백업 4겹: (1) backups 테이블 링 버퍼 — 학습 세션 후(1시간에 최대 1회), 가져오기·마이그레이션·복원 전 자동 스냅샷, 최근 10개, 'Restaurar copia' 화면(3단계). (2) Exportar — JSON envelope를 폰은 Web Share로 Files/Dropbox/카톡, PC는 다운로드; 가져오기는 병합 전용 + 개수 미리보기(3단계). (3) 7일 넘게 내보내기/동기화 없으면 배너. (4) Dropbox 스냅샷 파일(Dropbox가 30일간 버전 보관). 스키마 버전: meta.schemaVersion + migrations.js의 순수 함수 목록(v1->v2->...)을 Dexie version(n).upgrade(), 가져오기, 동기화가 공유. 오래된 기기의 파일은 항상 읽을 수 있고, 더 새로운 스키마 파일은 'Actualiza la app (recarga)'로 거부, 마이그레이션 전 백업 자동, 모르는 필드는 보존(관대하게 읽고 엄격하게 씀). 동기화(Dropbox App folder, 8-9단계): 기기마다 deviceId/deviceName. 연결은 PKCE + '코드 복사' 방식(redirect URI 없음): 앱이 https://www.dropbox.com/oauth2/authorize?client_id=KEY&response_type=code&code_challenge_method=S256&token_access_type=offline 을 열면 Dropbox가 코드를 화면에 보여주고, 사용자가 앱에 붙여넣으면 앱이 api.dropboxapi.com/oauth2/token으로 refresh token을 받습니다(IndexedDB meta에 저장, access token 4시간 자동 갱신; 로그인은 사용자가 직접). 파일: /devices/<deviceId>.json — 자기 파일만 쓰므로 conflicted copy 불가. sync(): 내 스냅샷 업로드 -> /devices 목록에서 rev 바뀐 파일 다운로드 -> 한 트랜잭션으로 병합(카드는 updatedAt 최신 승, deletedAt이 상대 updatedAt보다 새로우면 삭제 승, 삭제 후 편집은 복원, 동점은 deviceId; reviews는 id로 합집합; 새 리뷰가 붙은 카드는 방향별로 로그 재생하여 srs 재계산) -> 바뀐 게 있으면 재업로드 -> rev·lastSyncAt 저장. 트리거: 온라인 앱 시작, 세션 종료, visibilitychange->hidden, 수동 버튼; 실패는 'Sin conexión, se sincronizará luego'로 표시하고 학습은 계속. 새 폰/초기화된 기기는 Dropbox 연결만 하면 전부 복구. 시계 오차는 내용 LWW에만 영향(동기화 화면에 기기 시각 표시). 로그 증가량 하루 100회 기준 연 ~3MB, 필요 시 gzip. 개인 데이터는 사용자 Dropbox 앱 폴더에만 가고, GitHub 저장소에는 코드와 seed 덱만(exports/, imports/는 .gitignore).",
+  "step_plan": [
+    {
+      "step": 1,
+      "title": "뼈대 + 저장소 + 빠른 추가 + 개인 사전 (PC)",
+      "deliverable": "start.bat 더블클릭 -> http://localhost:8080 이 열리고, 한 칸 입력창으로 표현을 추가하고, 검색·필터·수정·휴지통이 되며, 새로고침 후에도 데이터가 남고, seed 20장이 들어 있는 '개인 사전'을 PC에서 바로 쓸 수 있음",
+      "details": "Folder (user picks, e.g. C:\\Users\\moooh\\c2vocab). Files: index.html, styles.css (mobile-first, 44px tap targets, safe-area insets), js/app.js (router: #/home #/explorar #/papelera), js/db.js (Dexie; db.version(1).stores({cards:'id, updatedAt, deletedAt, type, status, *tags, srs.rec.due, srs.prod.due', reviews:'id, cardId, ts', meta:'key', backups:'++id, createdAt'}); meta init: deviceId, deviceName, schemaVersion=1, settings defaults), js/util.js (uuid, nowIso, normalize = NFD + strip diacritics + lowercase + collapse spaces), js/taxonomy.js (type/register/region lists + suggested tema tags), js/capture.js (mini-language parser: line1=front, ': '=back, '= '=ko, '> '=example, '# '=tags, '@ '=source, plus one-liner 'lema :: def | ejemplo'; returns Card with status inbox if back empty), js/ui/quickadd.js (+ button, textarea, type/register chips remembering last via meta.lastChoice, tag autocomplete from existing tags), js/ui/explorar.js (list, search by normalize(front|back|example), filters type/register/tag/status/'sin ejemplo', inline edit, soft delete = deletedAt + updatedAt bump), js/ui/papelera.js (restore). vendor/dexie.min.js: Claude runs once `curl.exe -L -o vendor\\dexie.min.js https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.11/dexie.min.js` (pin version; record it in README). seeds/base.json: 20 real C2 cards across all types with [[gap]] examples, exampleSource 'redactado'; 'Cargar ejemplos' button imports it via the same add path. start.bat: `cd /d %~dp0 && start http://localhost:8080 && python -m http.server 8080`. .gitignore: exports/, imports/, *.local.json. CLAUDE.md: folder layout, JSON card contract, rule 'no build step, no npm'. All paths relative (./js/app.js) so the same files work under /c2vocab/ on Pages later. No service worker yet. Test: add 3 cards by mini-language, reload, search 'hincapie' finds 'hincapié', delete and restore."
+    },
+    {
+      "step": 2,
+      "title": "SM-2 엔진 + 일일 복습 화면 (reconocimiento)",
+      "deliverable": "홈 화면의 큰 'Estudiar' 버튼으로 due + 신규 카드를 4단계 평가로 복습하고, 취소·세션 요약·streak이 보이며, test.html에서 스케줄러 검증이 통과함. PC에서 실제 매일 학습 시작",
+      "details": "js/srs.js: pure `next(state, rating, nowIso, settings, cardId)` (SM-2 params from srs field above; fuzz seeded by hash(cardId)); `initialState()`; `predict(state, settings, now)` returns the 4 next intervals for button labels. js/session.js: `buildQueue(now, settings)` = learning cards whose step elapsed -> due review (sorted by due, same-day shuffled with seeded RNG) -> new cards (status active, back non-empty, createdAt asc, cap newPerDay minus newSeenToday, paused if due count > 3*newPerDay*2) interleaved 1 new per 3 reviews; in-session requeue: rating 1 (or learning step <10 min) reinserts the card >= 8 positions later; day boundary = local 04:00 (`studyDay(ts)`); session ends when queue empty or sessionMinutes passed (soft: shows 'Seguir / Terminar'). Only dir 'rec' in this step (srs.prod stays 'new'; prod fields exist in schema so no migration later). js/ui/review.js: front = front (+ register/region badges), Space/tap reveals back, ko, example, notes; buttons Otra vez/Difícil/Bien/Fácil with predicted interval text; keys 1-4; `rate(card, dir, rating)` runs one Dexie transaction: reviews.add({id, cardId, dir, ts, rating, mode:'srs', deviceId, stateBefore: state.state, elapsedDays, scheduledDays, elapsedMs}) + cards.update(srs.rec = next(...)); undo keeps a stack of {reviewId, prevSrs} in memory for the session. js/ui/home.js: due/new/done today, streak (consecutive study days from reviews), big Estudiar button, 'Nuevas del día' secondary button. js/stats-lite.js: countsToday(), streak(). test.html + js/tests/srs.test.js: hand-computed vectors (new->Good->1d, review 10d Good ease 2.5 -> 25d, lapse -> relearning + ease 2.3, min ease 1.3, max interval, fuzz determinism, replay(log) == stored state); prints PASS/FAIL list in the page. Also `replay(cardId, dir, reviews, settings)` in srs.js now (used by tests, later by merge). Test: import seeds, study 10 cards, close browser, reopen, counts persist; press undo; test.html all green."
+    },
+    {
+      "step": 3,
+      "title": "내보내기/가져오기/병합 + 백업 + Claude 대량 붙여넣기",
+      "deliverable": "Ajustes에서 전체 JSON 내보내기(폰 공유/PC 다운로드), 병합 가져오기(미리보기 포함), 자동 스냅샷 + 'Restaurar copia', Importar에 Claude 답을 붙여넣으면 20-30장이 몇 초 만에 들어옴. docs/PROMPT.md 템플릿 완성. 데이터가 기기를 떠날 수 있고 잃기 어려워짐",
+      "details": "js/export.js: `buildEnvelope()` -> {app:'c2vocab', schemaVersion, exportedAt, deviceId, deviceName, cards (incl. tombstones), reviews, settings}; `exportFile()` uses navigator.share({files:[File]}) when canShare else <a download> 'c2vocab-YYYY-MM-DD-<deviceName>.json'; sets meta.lastExportAt. js/merge.js: pure `mergeDoc(localDoc, incomingDoc) -> {doc, changedCardIds, stats}`: cards by id, LWW on updatedAt, tombstone rule (deletedAt newer than other's updatedAt wins; edit after delete undeletes), tie -> deviceId; reviews union by id; then srs replay for changedCardIds per dir via srs.replay; unknown fields preserved; result idempotent (test: merge(doc, doc) == doc, merge twice == once). js/importer.js: `parse(text|file)` auto-detects envelope / JSON array / TSV header or positional (front, back, example, type, tags) / pipe lines 'front | back | example | tags'; normalizes each row to Card (assign id, timestamps, status inbox if back empty, validate type enum leniently -> 'otro' with warning); dedupe key normalize(front)+'|'+type against existing cards; preview table: nuevas / duplicadas / inválidas with reasons; per-import mode Omitir | Enriquecer (fill only empty content fields, bump updatedAt) | Sobrescribir (content fields only, never srs/reviews/status of learned cards); commit in one transaction. js/backup.js: `snapshot(reason)` stores JSON string in backups, prunes to 10, throttles 'session' reason to 1/hour; called after each session (step 2 hook), before import, before restore; ui/restaurar.js lists snapshots (date, reason, counts) and restores via mergeDoc (never replace) after taking a 'pre-restore' snapshot. Export reminder banner: if max(lastExportAt, lastSyncAt) older than 7 days. docs/PROMPT.md: Korean explanation + Spanish prompt: 'Devuelve SOLO un array JSON con objetos {front, back (definición monolingüe <=25 palabras), example (15-35 palabras, expresión entre [[ ]]), exampleSource:\"redactado\", type (uno de: locucion|colocacion|refran|marcador|falso_amigo|verbo_prep|variante|expresion|lexico|estructura), register (culto|neutro|coloquial|vulgar), region, ko (<=6 palabras), colocaciones[], contraste (obligatorio en falso_amigo/variante), tags[]} para 20 <tipo> de nivel C2 sobre <tema>.' 'Copiar prompt' button in Importar copies it with current inbox fronts appended. CLAUDE.md updated with the same contract so Claude Code can write imports/*.json. tools/verify_export.py (stdlib only): validates envelope, prints counts by type/status and duplicate keys. test.html gains merge/idempotency/importer tests. Test: export on PC, delete a card, import the file -> card stays deleted (tombstone newer); paste a Claude list of 20 -> 20 nuevas; paste again -> 20 duplicadas."
+    },
+    {
+      "step": 4,
+      "title": "PWA + GitHub Pages + 폰 설치",
+      "deliverable": "https://<user>.github.io/c2vocab/ 가 폰 홈 화면에 설치되고 비행기 모드에서도 열리며, 새 버전 배포 시 '새 버전, 새로고침' 배너가 뜸. README에 3줄 배포 루틴(git add -A / commit / push). 폰과 PC가 각자 데이터를 갖고 export/import로 옮길 수 있음",
+      "details": "manifest.webmanifest (name, short_name 'C2 Vocab', start_url './', display standalone, lang es, theme/background colors, icons 192/512 from make-icon.html canvas page saved once), sw.js (CACHE_VERSION constant; precache app shell list; cache-first for same-origin shell, network-first for seeds; skipWaiting on message; clients.claim), app.js registers SW only when location.hostname !== 'localhost'; 'Nueva versión disponible - Recargar' banner on updatefound. iOS: apple-touch-icon, apple-mobile-web-app-capable, storage.persist() call + banner 'Instala en la pantalla de inicio' when navigator.standalone is false. Git: user sets identity, Claude runs git init/commit; user creates public repo + enables Pages (Settings -> Pages -> main / root); first push triggers GCM browser login (user). README.md (ko/es): run, deploy, phone install, export routine, Cloudflare Pages as fallback if the user objects to a public repo. Test: phone airplane mode opens the app; add a card on phone; export via share sheet to Dropbox; import on PC."
+    },
+    {
+      "step": 5,
+      "title": "Producción/cloze 방향 + Bandeja",
+      "deliverable": "예문 빈칸 -> 표현 떠올리기 카드가 rec가 한 번 Bien을 받은 뒤 큐에 섞여 나오고(같은 날 두 방향 안 겹침), verbo_prep은 전치사만 빈칸, Bandeja 화면에서 표현만 적어둔 카드를 완성. 인식과 생산 두 방향 훈련 시작",
+      "details": "js/cloze.js: parse [[...]] (multiple allowed), else auto-locate normalize(front) or its inflected stem inside example; for type verbo_prep gap only the marked preposition; returns null -> prod disabled + card listed under 'sin ejemplo'. session.js: include dir 'prod' when card.direction != 'rec' and cloze available and srs.rec.reps >= 1 with last rating >= 3 (unlock gate); sibling burying = never both dirs of one card in the same studyDay; queue mixes dirs. review.js: prod front = gapped sentence + ko hint + register badge, reveal shows front, colocaciones, equivalentes; 'Verificar ejemplo' tick sets exampleVerified. ui/bandeja.js: inbox cards one by one with back/example fields; saving with back sets status active. Explorar filter 'sin ejemplo'. Tests: cloze parser vectors (accents, plural, verbo_prep)."
+    },
+    {
+      "step": 6,
+      "title": "데이터 안전 강화 (마이그레이션 틀, 스키마 가드)",
+      "deliverable": "migrations.js 틀과 더미 v1->v2 마이그레이션이 테스트를 통과하고, 더 새로운 스키마 파일은 거부되며, 마이그레이션 전 자동 백업, 저장소 지속성 상태가 Ajustes에 보임. 동기화 없이도 데이터를 잃기 어려움",
+      "details": "js/migrations.js exports MIGRATIONS = [{from:1,to:2,card(c){...},review(r){...},settings(s){...}}], `migrateDoc(doc)` and Dexie `version(2).upgrade(tx => ...)` both call the same functions; `assertReadable(doc)` throws 'Actualiza la app' if doc.schemaVersion > current; backup.snapshot('pre-migration') before upgrade (Dexie on('versionchange') hook + one-time flag). Ajustes shows: schemaVersion, storage persisted yes/no, estimate() usage, deviceName editable, last export/sync. Tests: migrate v1 export -> v2 -> import ok; newer doc refused; import preserves unknown field."
+    },
+    {
+      "step": 7,
+      "title": "통계 + 학습량 설정 + 시험일",
+      "deliverable": "Estadísticas 화면(streak, 오늘, 상태별 카드, 30일 due 예측, 태그/type별 숙련도, 30일 retention, prueba/tema 커버리지)과 Ajustes(newPerDay, 세션 분, 복습 상한, 밀림 자동정지, 시험일 taper). 진도가 보이고 하루 학습량이 몇 분으로 유지됨",
+      "details": "js/stats.js pure functions over cards+reviews: forecast(days) by srs.*.due, byState (derived: dominada = interval >= 60d and no lapse in 90d), byTag/byType mastery (share in review state + mean ease), retention30 = ratings>=3 / all for review-state cards, coverage by tag prefixes 'prueba:' and 'tema:'; simple inline SVG bars, no chart library. Settings UI writes meta.settings; examDate -> maxInterval = min(365, days until exam) and newPerDay=0 in the last 7 days; backlog throttle banner explains why new cards paused."
+    },
+    {
+      "step": 8,
+      "title": "Dropbox 연결 + 첫 동기화",
+      "deliverable": "config.js의 App key로 '코드 복사' 방식 로그인 후 'Sincronizar' 버튼 한 번에 폰과 PC가 같은 데이터가 됨. /devices/<deviceId>.json 업로드·다운로드·병합·재생 동작",
+      "details": "config.js: DROPBOX_APP_KEY. js/dropbox.js: PKCE (crypto.subtle SHA-256, base64url), authorize URL without redirect_uri (token_access_type=offline), paste-code form, POST /oauth2/token (grant_type=authorization_code, code_verifier), store refresh token in meta (IndexedDB), refresh access token when expired; files_upload (mode overwrite, path /devices/<id>.json), files/list_folder, files/download by path, keep known revs in meta.syncRevs. js/sync.js: sync() = upload own envelope -> list -> download changed -> mergeDoc each in one transaction -> if changed re-upload -> meta.lastSyncAt; manual button + status line. Errors non-blocking. Test: link PC, link phone, add a card on each, sync both -> both have both cards and tombstones/reviews merged."
+    },
+    {
+      "step": 9,
+      "title": "동기화 안정화",
+      "deliverable": "자동 동기화(앱 시작/세션 후/백그라운드), 상태줄 'Última sincronización: hace X · N dispositivos', 토큰 만료 시 재연결 흐름, 문서화된 충돌 테스트(두 기기에서 오프라인으로 같은 카드 편집+복습 후 동기화) 통과, 시계 오차 표시. 동기화를 믿을 수 있음",
+      "details": "Triggers on load (online), session end, visibilitychange hidden, navigator.onLine change; mutex so two syncs don't overlap; exponential backoff; 401 -> 'Vuelve a conectar Dropbox'; docs/SYNC-TEST.md with the step-by-step conflict test and expected outcome (content LWW, reviews union, srs replay). Device list screen with last-seen timestamps and clock skew warning if > 5 min."
+    },
+    {
+      "step": 10,
+      "title": "빠른 수집 다듬기 + Claude 루프",
+      "deliverable": "태그 자동완성·최근 태그, Android 공유 시트 -> Bandeja, 'Exportar bandeja para Claude' -> 재가져오기로 빈 칸 채움, seeds/ 폴더 주제 덱 원탭 가져오기. 수집이 수 초로 줄어듦",
+      "details": "manifest share_target (GET, params text/title/url -> #/add?text=), prefill capture; 'Exportar bandeja' builds {id, front, source}[] JSON + prompt; re-import matches by id and enriches; seeds/index.json lists decks (marcadores, locuciones, falsos_amigos, variantes, verbos_prep) generated by Claude with 'redactado' examples; Explorar tag chips with counts; bulk tag edit."
+    },
+    {
+      "step": 11,
+      "title": "시험 도구 (DELE 모드)",
+      "deliverable": "Repaso libre/cram(SRS 무영향), 타이핑 답변(악센트 관대 채점 + 차이 표시), Cloze 4지선다, Reformulación de registro, Lista de producción(Markdown 복사), TTS 읽기. 시험 직전 훈련 가능",
+      "details": "reviews.mode values cram|quiz|produccion|dictado are ignored by session/replay; grader: normalize compare -> exact=3, accent-only or Levenshtein<=1 = 2 with char diff, else 1, tap to 4; distractors from same tema/type; reformulación uses equivalentes; production list = 15-20 prod-due-soon cards for a tag, copy as '- [ ] expresión — definición'; speechSynthesis with es-ES/es-MX voice picker."
+    },
+    {
+      "step": 12,
+      "title": "장기 유지보수",
+      "deliverable": "CHANGELOG.md, README(ko/es) 학습·동기화·월 1회 내보내기 루틴, leech Clínica, 카드 관계, 선택적 FSRS 재생 준비(meta.algo), 스냅샷 압축. C2 준비 기간 내내 안정적으로 유지",
+      "details": "Leech: lapses>=8 -> tag 'leech' + suspended + Clínica screen with repair actions (rewrite example, add ko mnemonic, link confusable -> contrast card). Card relations field 'related' []. Algo swap scaffold: srs.js exposes registry {sm2:v1}, replay picks by meta.algo; document how to add fsrs later. CompressionStream gzip for snapshots > 5 MB. Monthly export reminder text. Final review of phone ergonomics and dark mode."
+    }
+  ],
+  "questions_for_user": [
+    {
+      "question": "프로젝트 폴더를 어디에 만들까요? (1단계에서 바로 필요)",
+      "options": [
+        "C:\\Users\\moooh\\c2vocab (추천)",
+        "C:\\Users\\moooh\\Documents\\c2vocab",
+        "Dropbox 폴더 안 (예: C:\\Users\\moooh\\Dropbox\\c2vocab)"
+      ],
+      "recommendation": "C:\\Users\\moooh\\c2vocab 을 추천합니다. 경로가 짧아 start.bat·git 명령이 단순하고, Dropbox 동기화 폴더 안에 git 저장소를 두면 .git 파일 충돌이 생길 수 있어 피하는 편이 좋습니다. 개인 데이터는 어차피 앱(IndexedDB)과 Dropbox 앱 폴더에 있으므로 프로젝트 폴더 위치는 코드만 결정합니다."
+    },
+    {
+      "question": "앱 화면의 버튼·메뉴 언어는 무엇으로 할까요? (1단계 UI부터 결정)",
+      "options": [
+        "스페인어 라벨 (Estudiar, Explorar, Otra vez...) + 한국어 도움말 (추천)",
+        "한국어 라벨 + 스페인어 토글은 나중에",
+        "영어"
+      ],
+      "recommendation": "스페인어 라벨을 추천합니다. C2 준비에는 스페인어 노출이 하나라도 더 있는 게 좋고, 라벨은 짧아 어렵지 않으며 설정·설명 문구는 한국어로 붙입니다. 토글은 12단계에 넣을 수 있습니다."
+    },
+    {
+      "question": "폰은 Android인가요, iPhone인가요? (1단계 CSS/터치 설계와 4단계 설치·10단계 공유 시트에 영향)",
+      "options": [
+        "Android (Chrome)",
+        "iPhone (Safari)",
+        "둘 다"
+      ],
+      "recommendation": "어느 쪽이든 계획은 그대로 동작하지만, iPhone이면 홈 화면 설치를 필수로 안내하고 공유 시트 캡처(share_target) 대신 붙여넣기 캡처를 기본으로 잡으며, Android면 share_target을 10단계에 그대로 넣습니다. 모르시면 Android 기준으로 시작해도 4단계에서 조정 가능합니다."
+    }
+  ]
+}
