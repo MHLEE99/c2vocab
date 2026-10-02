@@ -1,11 +1,14 @@
 // Application entry: hash router, bottom navigation, floating '+' button.
 
-import { db, initMeta } from './db.js';
+import { db, initMeta, getMeta, setMeta } from './db.js';
 import { h, clear, onCardsChanged, isSheetOpen } from './ui/components.js';
 import * as home from './ui/home.js';
 import * as explorar from './ui/explorar.js';
 import * as papelera from './ui/papelera.js';
 import * as review from './ui/review.js';
+import * as ajustes from './ui/ajustes.js';
+import * as importar from './ui/importar.js';
+import * as copias from './ui/copias.js';
 import { openQuickAdd } from './ui/quickadd.js';
 
 // Route options:
@@ -16,7 +19,10 @@ const ROUTES = {
   '#/': { title: 'Inicio', view: home },
   '#/explorar': { title: 'Explorar', view: explorar },
   '#/papelera': { title: 'Papelera', view: papelera },
+  '#/ajustes': { title: 'Ajustes', view: ajustes },
   '#/estudiar': { title: 'Estudiar', view: review, nav: false, navHash: '#/', studying: true },
+  '#/importar': { title: 'Importar', view: importar, nav: false, navHash: '#/ajustes' },
+  '#/copias': { title: 'Copias automáticas', view: copias, nav: false, navHash: '#/ajustes' },
 };
 
 // Inline SVG icons for the bottom nav (no icon font, works offline).
@@ -27,6 +33,8 @@ const ICONS = {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 1 0 4.2 12.6l5.1 5.1 1.4-1.4-5.1-5.1A7 7 0 0 0 10 3zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg>',
   '#/papelera':
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4zm-3 6h12l-1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>',
+  '#/ajustes':
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6c.6.2 1.1.5 1.6.9l2.5-.9 1.7 3-2 1.7a7 7 0 0 1 0 1.8l2 1.7-1.7 3-2.5-.9c-.5.4-1 .7-1.6.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.6-.9l-2.5.9-1.7-3 2-1.7a7 7 0 0 1 0-1.8l-2-1.7 1.7-3 2.5.9c.5-.4 1-.7 1.6-.9zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>',
 };
 
 let currentBase = null; // route key of the view on screen, e.g. '#/estudiar'
@@ -142,8 +150,26 @@ async function refreshCurrentView() {
   await renderInto(document.getElementById('view'), def.view, currentParams);
 }
 
+/**
+ * Ask the browser (once, on the first start) to keep our data even when the disk gets full.
+ * The answer is cached in the meta row 'storagePersist': 'si' | 'no' | 'no-disponible'.
+ * Ajustes shows it. Never blocks or breaks the start of the app.
+ */
+async function requestPersistence() {
+  const cached = await getMeta('storagePersist');
+  if (cached) return;
+  const storage = typeof navigator !== 'undefined' ? navigator.storage : null;
+  if (!storage || typeof storage.persist !== 'function') {
+    await setMeta('storagePersist', 'no-disponible');
+    return;
+  }
+  const granted = await storage.persist();
+  await setMeta('storagePersist', granted ? 'si' : 'no');
+}
+
 async function main() {
   await initMeta();
+  requestPersistence().catch((err) => console.error(err)); // in the background
   renderNav();
   document.getElementById('fab').addEventListener('click', () => openQuickAdd());
   window.addEventListener('hashchange', route);

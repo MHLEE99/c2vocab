@@ -937,3 +937,190 @@ h2.section-title-first {
 body.studying .toast-root {
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 150px);
 }
+
+/* ---------- step 3: Ajustes / Importar / Copias ---------- */
+
+/* Checkboxes and radios must not take the full-width text-input style. */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--primary);
+}
+
+input[type="file"] {
+  padding: 8px;
+}
+
+/* A label with a checkbox/radio: the whole row is the 44px tap target. */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.radio-group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 0;
+  padding: 4px 12px 6px;
+  min-width: 0;
+}
+
+.radio-group legend {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-right: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Input with a button on its right (device name). */
+.inline-row {
+  display: flex;
+  gap: 10px;
+}
+
+.inline-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.data-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px 14px;
+  margin: 8px 0 12px;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+.data-label {
+  color: var(--muted);
+}
+
+.data-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.plain-list {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.plain-list li {
+  margin: 4px 0;
+}
+
+/* Banners: export reminder on Inicio, result of an import. */
+.banner {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.banner-warn {
+  background: var(--warn-soft);
+  border-color: #ecd9a0;
+}
+
+.banner-ok {
+  background: #e3f4ea;
+  border-color: #a5d6b9;
+}
+
+.banner-title {
+  font-weight: 600;
+}
+
+.banner .btn-row {
+  margin-bottom: 0;
+}
+
+.import-text {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 16px; /* never below 16px: iOS would zoom */
+}
+
+.import-file {
+  margin-top: 10px;
+}
+
+.import-options {
+  margin: 8px 0 4px;
+}
+
+.import-preview .btn-block {
+  margin-top: 10px;
+}
+
+.import-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.import-count {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Status colours of import rows (the text label keeps them readable without colour). */
+.badge-st-nueva {
+  background: #e3f4ea;
+  color: #14633a;
+}
+
+.badge-st-duplicada {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.badge-st-repetida {
+  background: #ececec;
+  color: #555;
+}
+
+.badge-st-invalida {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.preview-item.preview-invalid {
+  border-color: #e9b4ae;
+  background: var(--danger-soft);
+}
+
+.preview-item {
+  overflow-wrap: anywhere;
+}

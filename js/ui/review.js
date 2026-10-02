@@ -10,6 +10,7 @@ import { typeLabel } from '../taxonomy.js';
 import { predict, resolveSettings } from '../srs.js';
 import { buildQueue, createSession } from '../session.js';
 import { countsToday, streak, dueTomorrow } from '../stats-lite.js';
+import { snapshot } from '../backup.js';
 import { h, clear, badge, toast, openSheet, closeSheet, isSheetOpen } from './components.js';
 import { renderExampleHtml } from './explorar.js';
 
@@ -421,6 +422,11 @@ export async function render(container, params = {}) {
     const seq = summarySeq;
     const now = nowIso();
     frozenMs = studyMs();
+    // Safety copy after studying (at most one per hour). It runs in the background and
+    // must never block or break the summary.
+    Promise.resolve()
+      .then(() => snapshot('session', now))
+      .catch((err) => console.error(err));
     statusLine.hidden = true;
     keysHint.hidden = true;
     renderActions(); // hides the action bar

@@ -11,6 +11,12 @@ import { test, assert, eq, deepEq, throws, run } from './tests/harness.js';
 import './tests/srs.test.js';
 import './tests/session.test.js';
 import './tests/stats.test.js';
+// Step 3 test files (merge, import, export/backup, prompt).
+import './tests/merge.test.js';
+import './tests/importer.test.js';
+import './tests/backup.test.js';
+import './tests/prompt.test.js';
+import './tests/reminder.test.js';
 
 // ------------------------------------------------------------ util.js
 

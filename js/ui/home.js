@@ -1,9 +1,12 @@
 // Inicio: today's study numbers, Estudiar buttons, library counts, seed loader, quick add.
 
-import { listCards, listReviews, getSettings, addCards, newCard, existingKeys, dupKey } from '../db.js';
+import { listCards, listReviews, getSettings, getMeta, setMeta, addCards, newCard, existingKeys, dupKey } from '../db.js';
 import { fmtDate, nowIso } from '../util.js';
 import { queueInfo, isEligible } from '../session.js';
 import { countsToday, streak } from '../stats-lite.js';
+import { studyDay, resolveSettings } from '../srs.js';
+import { exportReminder, exportReminderText } from '../reminder.js';
+import { exportToastText, runExport } from './ajustes.js';
 import { h, toast, emitCardsChanged } from './components.js';
 import { openQuickAdd } from './quickadd.js';
 
@@ -18,7 +21,12 @@ function goTo(hash) {
 }
 
 export async function render(container) {
-  const [cards, reviews, settings] = await Promise.all([listCards({ deleted: false }), listReviews(), getSettings()]);
+  const [cards, reviews, settings, snoozedDay] = await Promise.all([
+    listCards({ deleted: false }),
+    listReviews(),
+    getSettings(),
+    getMeta('exportSnoozeDay'),
+  ]);
 
   // ---- today's study numbers (same calculation as the Estudiar screen)
   const now = nowIso();
@@ -27,6 +35,18 @@ export async function render(container) {
   const info = queueInfo({ cards, now, settings, newSeenToday: today.newSeen, reviewsDoneToday: today.reviewsDone });
   const racha = streak(reviews, now, settings);
   const studyable = cards.filter(isEligible).length;
+
+  // ---- export reminder (only when there is something to lose)
+  const dayNow = studyDay(now, resolveSettings(settings).dayBoundaryHour);
+  const reminder = exportReminder({
+    cardCount: cards.length,
+    lastExportAt: settings.lastExportAt,
+    lastSyncAt: settings.lastSyncAt,
+    snoozedDay,
+    today: dayNow,
+    nowIso: now,
+  });
+  if (reminder) container.appendChild(exportBanner(reminder, dayNow));
 
   container.appendChild(h('h2', { class: 'section-title section-title-first' }, 'Hoy'));
   container.appendChild(
@@ -100,6 +120,56 @@ export async function render(container) {
   );
 }
 
+/** The 'you have not exported for a while' banner with its two buttons. */
+function exportBanner(reminder, today) {
+  const exportBtn = h(
+    'button',
+    {
+      class: 'btn btn-primary',
+      type: 'button',
+      onclick: async () => {
+        exportBtn.disabled = true;
+        try {
+          const result = await runExport();
+          toast(exportToastText(result));
+          if (result.method !== 'cancelled') banner.remove(); // lastExportAt is set: no reminder for 7 days
+        } catch (err) {
+          console.error(err);
+          toast('No se pudo exportar: ' + (err && err.message ? err.message : err));
+        } finally {
+          exportBtn.disabled = false;
+        }
+      },
+    },
+    'Exportar ahora'
+  );
+  const laterBtn = h(
+    'button',
+    {
+      class: 'btn',
+      type: 'button',
+      onclick: async () => {
+        banner.remove();
+        // Snooze until the next study day.
+        await setMeta('exportSnoozeDay', today);
+      },
+    },
+    'Más tarde'
+  );
+  const banner = h(
+    'div',
+    { class: 'banner banner-warn', role: 'status' },
+    h('div', { class: 'banner-title' }, exportReminderText(reminder)),
+    h(
+      'p',
+      { class: 'hint-ko' },
+      "데이터는 이 브라우저 안에만 있습니다. 'Exportar ahora'를 누르면 카드와 복습 기록 전체가 파일 하나로 저장됩니다 (일주일에 한 번 권장)."
+    ),
+    h('div', { class: 'btn-row' }, exportBtn, laterBtn)
+  );
+  return banner;
+}
+
 /** Fetch ./seeds/base.json and add the rows that are not already in the database. */
 async function loadSeeds(button) {
   button.disabled = true;
@@ -130,6 +200,9 @@ async function loadSeeds(button) {
         continue;
       }
       keys.add(key); // also skips duplicates inside the seed file itself
+      // Deterministic id: the same seed loaded on two devices is ONE card after a merge
+      // (cards merge by id; a random id per device would leave two copies).
+      card.id = 'seed:' + key;
       toAdd.push(card);
     }
     const added = await addCards(toAdd);
