@@ -12,16 +12,23 @@ c2vocab/
   test.html           browser test runner (open /test.html)
   start.bat           double-click: python -m http.server 8080 + opens the browser
   js/
-    app.js            entry: hash router (#/, #/explorar, #/papelera), nav, FAB, cards-changed refresh
+    app.js            entry: hash router (#/, #/explorar, #/papelera, #/estudiar[?modo=nuevas]), nav, FAB,
+                      view lifecycle (optional destroy()), cards-changed refresh (skipped on #/estudiar)
     util.js           uuid, nowIso, normalize, escapeHtml, debounce, fmtDate, sleep
     taxonomy.js       TYPES, REGISTERS, REGIONS, STATUSES, DIRECTIONS, SUGGESTED_TEMAS
-    srs.js            initialState() / initialSrs() only (scheduler comes in step 2)
+    srs.js            pure SM-2 scheduler: SM2, next, predict, replay, studyDay, isDue, isSubDayLearning
+    session.js        buildQueue / queueInfo (pure) + createSession in-memory controller (no database)
+    stats-lite.js     countsToday, streak, dueTomorrow (pure, over review rows)
     capture.js        parseCapture(text, defaults) quick-add mini-language (pure) + SYNTAX_HELP_KO
     db.js             createDb(name) factory, default db 'c2vocab', all data-access functions
-    tests.js          tests for util/capture/srs/db (db tests use database 'c2vocab_test')
+    tests.js          test entry: util/capture/db tests (db tests use database 'c2vocab_test'), calls run()
+    tests/            harness.js (test/assert/eq/deepEq/throws/run) + srs.test.js, session.test.js, stats.test.js
     ui/
       components.js   h() DOM builder, toast, openSheet/closeSheet, chip, badge, emitCardsChanged
-      home.js         Inicio: counts, disabled Estudiar, Cargar ejemplos, Añadir
+      home.js         Inicio: today's numbers (queueInfo/countsToday/streak), Estudiar, Nuevas del día,
+                      library counts, Cargar ejemplos, Añadir
+      review.js       Estudiar: session screen (front -> reveal -> 4 ratings), undo, time-limit sheet,
+                      summary; exports render(container, params) + destroy()
       quickadd.js     bottom-sheet quick add with live preview
       explorar.js     search + filters + list + inline edit + soft delete
       papelera.js     deleted cards with Restaurar
@@ -51,6 +58,24 @@ c2vocab/
 - Dexie 4.0.11 is pinned in `vendor/`. Do not upgrade casually.
 - IndexedDB cannot index `null`: `deletedAt: null` rows are absent from that index. Load with `toArray()`
   and filter in JS (`listCards`). Never `where('deletedAt').equals(null)`.
+- A rating NEVER bumps `updatedAt` (`applyReview` / `undoReview`): `updatedAt` is for content edits; `srs` is
+  a cache that can be recomputed from the review log with `replay()`.
+- Reviews are append-only. Undo only marks the row with `undoneAt` (ISO); review rows are NEVER deleted.
+  Readers skip rows with `undoneAt` or `mode !== 'srs'`.
+- Scheduler/queue/stats functions (`srs.js`, `session.js`, `stats-lite.js`) are pure: no `Date.now()`, no
+  database, `now` is always an ISO-string parameter.
+- Day-level due dates (state `review`, or learning on a >= 1440 min step) are compared by study day:
+  `studyDay(due) <= studyDay(now)` (day boundary 04:00 local). Only sub-day learning compares `due <= now`.
+- Views export `render(container, params)`; a view with timers/listeners also exports `destroy()`, which the
+  router calls before showing another route. `#/estudiar` is not in the bottom nav, hides the FAB, and is
+  never rebuilt by the cards-changed refresh (that would reset the running session).
+- The review screen persists every rating immediately (`applyReview`); undo writes the database first
+  (`session.peekUndo()` -> `undoReview`) and only then rolls the in-memory session back (`session.undo()`).
+- `applyReview(review, nextState, prevState)` refuses a rating when the stored srs is no longer at `prevState`
+  (same card rated in another tab); `undoReview` only undoes the card's latest, not-yet-undone rating.
+- The daily review limit uses `countsToday().reviewsDone` (answers to review-state cards), not `done`.
+- The router renders each view into a detached element and shows it only if no newer render started
+  (`renderInto` in `app.js`), so views must only append to the `container` they are given during `render`.
 - Small modules, short English comments, no clever one-liners.
 
 ## Card JSON contract (every stored card has every key)
@@ -106,7 +131,7 @@ Entries separated by blank lines. Line 1 = front (or `front :: back | example`).
 ## Step status (see docs/plan.json → step_plan)
 
 1. 뼈대 + 저장소 + 빠른 추가 + 개인 사전 (PC) — DONE
-2. SM-2 엔진 + 일일 복습 화면 (reconocimiento) — pending
+2. SM-2 엔진 + 일일 복습 화면 (reconocimiento) — DONE
 3. 내보내기/가져오기/병합 + 백업 + Claude 대량 붙여넣기 — pending
 4. PWA + GitHub Pages + 폰 설치 — pending
 5. Producción/cloze 방향 + Bandeja — pending

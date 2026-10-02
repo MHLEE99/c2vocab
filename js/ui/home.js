@@ -1,7 +1,9 @@
-// Inicio: counts, disabled Estudiar button (step 2), seed loader, shortcut to quick add.
+// Inicio: today's study numbers, Estudiar buttons, library counts, seed loader, quick add.
 
-import { listCards, addCards, newCard, existingKeys, dupKey } from '../db.js';
-import { fmtDate } from '../util.js';
+import { listCards, listReviews, getSettings, addCards, newCard, existingKeys, dupKey } from '../db.js';
+import { fmtDate, nowIso } from '../util.js';
+import { queueInfo, isEligible } from '../session.js';
+import { countsToday, streak } from '../stats-lite.js';
 import { h, toast, emitCardsChanged } from './components.js';
 import { openQuickAdd } from './quickadd.js';
 
@@ -11,13 +13,65 @@ function stat(value, label) {
   return h('div', { class: 'stat' }, h('div', { class: 'stat-value' }, String(value)), h('div', { class: 'stat-label' }, label));
 }
 
+function goTo(hash) {
+  window.location.hash = hash;
+}
+
 export async function render(container) {
-  const cards = await listCards({ deleted: false });
+  const [cards, reviews, settings] = await Promise.all([listCards({ deleted: false }), listReviews(), getSettings()]);
+
+  // ---- today's study numbers (same calculation as the Estudiar screen)
+  const now = nowIso();
+  const today = countsToday(reviews, now, settings);
+  // reviewsDone = answers to review-state cards only (new/learning answers do not use up the review limit)
+  const info = queueInfo({ cards, now, settings, newSeenToday: today.newSeen, reviewsDoneToday: today.reviewsDone });
+  const racha = streak(reviews, now, settings);
+  const studyable = cards.filter(isEligible).length;
+
+  container.appendChild(h('h2', { class: 'section-title section-title-first' }, 'Hoy'));
+  container.appendChild(
+    h(
+      'div',
+      { class: 'stats' },
+      stat(info.due, 'pendientes'),
+      stat(info.news, 'nuevas'),
+      stat(today.done, 'hechas hoy'),
+      stat(`${racha} ${racha === 1 ? 'día' : 'días'}`, 'racha')
+    )
+  );
+
+  const estudiar = h(
+    'button',
+    { class: 'btn btn-primary btn-block btn-big', type: 'button', disabled: info.total === 0, onclick: () => goTo('#/estudiar') },
+    `Estudiar (${info.total})`
+  );
+  container.appendChild(estudiar);
+
+  if (studyable === 0) {
+    container.appendChild(
+      h('p', { class: 'hint-ko' }, "아직 공부할 카드가 없습니다. 'Añadir'로 표현을 추가하거나 'Cargar ejemplos'로 예시 카드를 넣어 보세요.")
+    );
+  } else if (info.total === 0) {
+    container.appendChild(h('p', { class: 'hint-ko' }, '오늘 복습할 카드가 없습니다. 내일 다시 오세요!'));
+  }
+  if (info.newPaused) {
+    container.appendChild(h('p', { class: 'hint-ko warn-text' }, '밀린 복습이 많아 새 카드는 잠시 멈췄습니다'));
+  }
+
+  const nuevasBtn = h(
+    'button',
+    { class: 'btn btn-block', type: 'button', disabled: info.news === 0, onclick: () => goTo('#/estudiar?modo=nuevas') },
+    `Nuevas del día (${info.news})`
+  );
+  container.appendChild(h('div', { class: 'btn-row' }, nuevasBtn));
+
+  // ---- library counts
   const total = cards.length;
   const inbox = cards.filter((c) => c.status === 'inbox').length;
   const sinEjemplo = cards.filter((c) => !c.example || c.example.trim() === '').length;
   const last = cards.length ? cards[0].updatedAt : null; // listCards is sorted updatedAt desc
 
+  container.appendChild(h('h2', { class: 'section-title' }, 'Mis tarjetas'));
   container.appendChild(
     h(
       'div',
@@ -28,10 +82,6 @@ export async function render(container) {
       h('div', { class: 'stat' }, h('div', { class: 'stat-value', style: { fontSize: '16px' } }, last ? fmtDate(last) : '—'), h('div', { class: 'stat-label' }, 'última actualización'))
     )
   );
-
-  const estudiar = h('button', { class: 'btn btn-primary btn-block btn-big', type: 'button', disabled: true }, 'Estudiar');
-  container.appendChild(estudiar);
-  container.appendChild(h('p', { class: 'hint-ko' }, '2단계에서 활성화됩니다'));
 
   const loadBtn = h(
     'button',

@@ -8,9 +8,12 @@
 //   - cards are NEVER hard-deleted: softDeleteCard sets deletedAt, restoreCard clears it
 //   - every content change bumps updatedAt; createdAt never changes
 //   - multi-record writes happen in ONE Dexie transaction
+//   - a rating (applyReview / undoReview) never bumps card.updatedAt: srs is a cache
+//     that can be recomputed from the review log
+//   - reviews are append-only: undo only marks a row with undoneAt, rows are never deleted
 
 import { uuid, nowIso, normalize } from './util.js';
-import { initialSrs } from './srs.js';
+import { initialSrs, DEFAULT_SETTINGS } from './srs.js';
 import { normalizeTagList } from './capture.js';
 import { TYPE_IDS, REGISTER_IDS, STATUS_IDS, DIRECTION_IDS } from './taxonomy.js';
 
@@ -21,6 +24,26 @@ if (!Dexie) {
 
 export const SCHEMA_VERSION = 1;
 
+/** Default value of the meta row 'settings' (study settings + bookkeeping dates). */
+export function defaultSettings() {
+  return {
+    newPerDay: DEFAULT_SETTINGS.newPerDay,
+    maxReviewsPerDay: DEFAULT_SETTINGS.maxReviewsPerDay,
+    sessionMinutes: DEFAULT_SETTINGS.sessionMinutes,
+    learningSteps: DEFAULT_SETTINGS.learningSteps.slice(),
+    dayBoundaryHour: DEFAULT_SETTINGS.dayBoundaryHour,
+    examDate: null,
+    lastExportAt: null,
+    lastSyncAt: null,
+  };
+}
+
+const SRS_DIRS = ['rec', 'prod'];
+
+// Error text when a study session works with an outdated copy of a card
+// (the same card was rated in another tab or window).
+const STALE_MESSAGE = 'la tarjeta cambió en otra pestaña o ventana; vuelve a Inicio y abre Estudiar de nuevo';
+
 /** Default rows of the `meta` table, written on first run when missing. */
 function defaultMeta() {
   return {
@@ -28,16 +51,7 @@ function defaultMeta() {
     deviceId: uuid(),
     deviceName: guessDeviceName(),
     algo: { name: 'sm2', version: 1 },
-    settings: {
-      newPerDay: 15,
-      maxReviewsPerDay: 200,
-      sessionMinutes: 15,
-      learningSteps: [10, 1440],
-      dayBoundaryHour: 4,
-      examDate: null,
-      lastExportAt: null,
-      lastSyncAt: null,
-    },
+    settings: defaultSettings(),
     lastChoice: { type: 'expresion', register: 'neutro', region: '' },
   };
 }
@@ -308,6 +322,79 @@ export function createDb(name = 'c2vocab') {
     return new Set(cards.map((c) => dupKey(c.front, c.type)));
   }
 
+  /** Stored settings merged over the defaults (works even before initMeta has run). */
+  async function getSettings() {
+    const stored = await getMeta('settings');
+    const safe = stored && typeof stored === 'object' ? stored : {};
+    return { ...defaultSettings(), ...safe };
+  }
+
+  /** Every row of the review log (including undone ones; filter with !r.undoneAt). */
+  async function listReviews() {
+    return dexie.reviews.toArray();
+  }
+
+  /** The stored srs state of one direction (empty object if the card has none). */
+  function storedSrs(card, dir) {
+    return card.srs && card.srs[dir] ? card.srs[dir] : {};
+  }
+
+  /**
+   * Persist one rating: append the review row AND store the card's new srs state
+   * for that direction, in ONE transaction. Does NOT bump card.updatedAt.
+   * Throws (and writes nothing) if the card is missing or the review id already exists.
+   *
+   * expectedPrev (optional): the state the rating was computed from. When given, the
+   * stored state must still be at the same point (same reps and lastReviewAt); if another
+   * tab or window rated the card in the meantime, nothing is written and an error is
+   * thrown. This keeps "stored srs == replay(review log)" true.
+   */
+  async function applyReview(review, nextState, expectedPrev) {
+    if (!review || !review.id || !review.cardId) throw new Error('applyReview: repaso incompleto');
+    if (!SRS_DIRS.includes(review.dir)) throw new Error('applyReview: dirección no válida');
+    if (!nextState || typeof nextState !== 'object') throw new Error('applyReview: falta el estado nuevo');
+    await dexie.transaction('rw', dexie.cards, dexie.reviews, async () => {
+      const card = await dexie.cards.get(review.cardId);
+      if (!card) throw new Error('applyReview: la tarjeta no existe');
+      if (expectedPrev && typeof expectedPrev === 'object') {
+        const stored = storedSrs(card, review.dir);
+        const sameReps = (stored.reps || 0) === (expectedPrev.reps || 0);
+        const sameLast = (stored.lastReviewAt || null) === (expectedPrev.lastReviewAt || null);
+        if (!sameReps || !sameLast) throw new Error(STALE_MESSAGE);
+      }
+      await dexie.reviews.add(review);
+      await dexie.cards.update(review.cardId, { ['srs.' + review.dir]: { ...nextState } });
+    });
+  }
+
+  /**
+   * Undo one rating: mark the review row with undoneAt (the row is kept) AND put
+   * the previous srs state back on the card, in ONE transaction. Does NOT bump
+   * card.updatedAt. Returns the undoneAt timestamp.
+   * Throws (and writes nothing) if the review was already undone, belongs to another
+   * card/direction, or is not the card's latest rating (another tab rated it since).
+   */
+  async function undoReview(reviewId, cardId, dir, prevState) {
+    if (!SRS_DIRS.includes(dir)) throw new Error('undoReview: dirección no válida');
+    if (!prevState || typeof prevState !== 'object') throw new Error('undoReview: falta el estado anterior');
+    const undoneAt = nowIso();
+    await dexie.transaction('rw', dexie.cards, dexie.reviews, async () => {
+      const review = await dexie.reviews.get(reviewId);
+      if (!review) throw new Error('undoReview: el repaso no existe');
+      const card = await dexie.cards.get(cardId);
+      if (!card) throw new Error('undoReview: la tarjeta no existe');
+      if (review.undoneAt) throw new Error('undoReview: el repaso ya estaba deshecho');
+      if (review.cardId !== cardId || review.dir !== dir) {
+        throw new Error('undoReview: el repaso no pertenece a esa tarjeta');
+      }
+      // Only the latest rating of the card can be undone.
+      if ((storedSrs(card, dir).lastReviewAt || null) !== review.ts) throw new Error(STALE_MESSAGE);
+      await dexie.reviews.update(reviewId, { undoneAt });
+      await dexie.cards.update(cardId, { ['srs.' + dir]: { ...prevState } });
+    });
+    return undoneAt;
+  }
+
   return {
     name,
     dexie,
@@ -324,6 +411,10 @@ export function createDb(name = 'c2vocab') {
     allTags,
     findDuplicate,
     existingKeys,
+    getSettings,
+    listReviews,
+    applyReview,
+    undoReview,
   };
 }
 
@@ -341,5 +432,9 @@ export const listCards = db.listCards;
 export const allTags = db.allTags;
 export const findDuplicate = db.findDuplicate;
 export const existingKeys = db.existingKeys;
+export const getSettings = db.getSettings;
+export const listReviews = db.listReviews;
+export const applyReview = db.applyReview;
+export const undoReview = db.undoReview;
 
 export default db;

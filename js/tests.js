@@ -1,43 +1,16 @@
 // Browser test runner (open http://localhost:8080/test.html). No framework, no Node.
 // Database tests use a separate Dexie database 'c2vocab_test' and never touch 'c2vocab'.
 
-import { uuid, nowIso, normalize, escapeHtml, fmtDate, sleep } from './util.js';
+import { uuid, nowIso, normalize, escapeHtml, fmtDate, sleep, hashString, mulberry32 } from './util.js';
 import { parseCapture, splitTags, normalizeTagList } from './capture.js';
-import { initialState, initialSrs } from './srs.js';
+import { initialState, initialSrs, next } from './srs.js';
 import { createDb, newCard, dupKey } from './db.js';
+import { test, assert, eq, deepEq, throws, run } from './tests/harness.js';
 
-// ------------------------------------------------------------ tiny harness
-
-const tests = [];
-function test(name, fn) {
-  tests.push({ name, fn });
-}
-
-function assert(cond, msg) {
-  if (!cond) throw new Error(msg || 'assertion failed');
-}
-
-function eq(actual, expected, msg) {
-  if (actual !== expected) {
-    throw new Error(`${msg ? msg + ': ' : ''}expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
-  }
-}
-
-function deepEq(actual, expected, msg) {
-  const a = JSON.stringify(actual);
-  const b = JSON.stringify(expected);
-  if (a !== b) throw new Error(`${msg ? msg + ': ' : ''}expected ${b}, got ${a}`);
-}
-
-async function throws(fn, msg) {
-  let threw = false;
-  try {
-    await fn();
-  } catch (e) {
-    threw = true;
-  }
-  if (!threw) throw new Error(msg || 'expected an error');
-}
+// Step 2 test files. They register their tests when imported (before the ones below).
+import './tests/srs.test.js';
+import './tests/session.test.js';
+import './tests/stats.test.js';
 
 // ------------------------------------------------------------ util.js
 
@@ -86,6 +59,28 @@ test('fmtDate returns a non-empty Spanish date and empty string for invalid inpu
   eq(fmtDate(''), '');
   eq(fmtDate('not a date'), '');
   eq(fmtDate(null), '');
+});
+
+test('hashString is FNV-1a 32-bit (known vectors) and deterministic', () => {
+  eq(hashString(''), 0x811c9dc5);
+  eq(hashString('a'), 0xe40c292c);
+  eq(hashString('foobar'), 0xbf9cf968);
+  eq(hashString('card-1:3'), hashString('card-1:3'));
+  assert(hashString('card-1:3') !== hashString('card-1:4'), 'different input, different hash');
+  assert(hashString('x') >= 0 && hashString('x') <= 0xffffffff, 'unsigned 32-bit');
+});
+
+test('mulberry32 gives the same sequence for the same seed, values in [0, 1)', () => {
+  const a = mulberry32(12345);
+  const b = mulberry32(12345);
+  const c = mulberry32(54321);
+  const seqA = [a(), a(), a(), a(), a()];
+  const seqB = [b(), b(), b(), b(), b()];
+  const seqC = [c(), c(), c(), c(), c()];
+  deepEq(seqA, seqB);
+  assert(JSON.stringify(seqA) !== JSON.stringify(seqC), 'another seed gives another sequence');
+  for (const x of seqA.concat(seqC)) assert(x >= 0 && x < 1, 'in [0, 1): ' + x);
+  assert(new Set(seqA).size > 1, 'values vary');
 });
 
 // ------------------------------------------------------------ srs.js
@@ -520,32 +515,150 @@ test('db: reviews / backups tables exist and accept rows', async () => {
   await resetTestDb();
 });
 
-// ------------------------------------------------------------ runner
+// ------------------------------------------------------------ db.js: reviews (step 2)
 
-async function run() {
-  const results = document.getElementById('results');
-  const summary = document.getElementById('summary');
-  let passed = 0;
-  let failed = 0;
-  for (const t of tests) {
-    const li = document.createElement('li');
-    try {
-      await t.fn();
-      passed += 1;
-      li.className = 'pass';
-      li.textContent = 'PASS  ' + t.name;
-    } catch (err) {
-      failed += 1;
-      li.className = 'fail';
-      li.textContent = 'FAIL  ' + t.name + ' — ' + (err && err.message ? err.message : String(err));
-      console.error(t.name, err);
-    }
-    results.appendChild(li);
-  }
-  const line = `${passed} passed, ${failed} failed`;
-  summary.textContent = line;
-  summary.className = failed === 0 ? 'pass' : 'fail';
-  document.title = line + ' · c2vocab tests';
+function reviewRow(cardId, ts, rating, stateBefore) {
+  return {
+    id: uuid(),
+    cardId,
+    dir: 'rec',
+    ts,
+    rating,
+    mode: 'srs',
+    deviceId: 'test-device',
+    stateBefore,
+    elapsedDays: 0,
+    scheduledDays: 0,
+    elapsedMs: 1200,
+    undoneAt: null,
+  };
 }
+
+test('db: getSettings merges stored settings over the defaults', async () => {
+  await resetTestDb();
+  const defaults = await tdb.getSettings();
+  eq(defaults.newPerDay, 15, 'works before initMeta');
+  eq(defaults.dayBoundaryHour, 4);
+  deepEq(defaults.learningSteps, [10, 1440]);
+  await tdb.setMeta('settings', { newPerDay: 5 });
+  const merged = await tdb.getSettings();
+  eq(merged.newPerDay, 5);
+  eq(merged.maxReviewsPerDay, 200);
+  eq(merged.sessionMinutes, 15);
+  await resetTestDb();
+});
+
+test('db: applyReview stores the review and the new srs state, without touching updatedAt', async () => {
+  await resetTestDb();
+  const c = newCard({ front: 'repasable', back: 'x' });
+  await tdb.addCards([c]);
+  await sleep(5);
+  const ts = '2026-10-02T12:00:00.000Z';
+  const state1 = next(initialState(), 3, ts, { fuzz: false }, c.id);
+  const review = reviewRow(c.id, ts, 3, 'new');
+  await tdb.applyReview(review, state1);
+
+  const stored = await tdb.getCard(c.id);
+  deepEq(stored.srs.rec, state1);
+  deepEq(stored.srs.prod, initialState(), 'the other direction is untouched');
+  eq(stored.updatedAt, c.updatedAt, 'a rating never bumps updatedAt');
+  eq(stored.createdAt, c.createdAt);
+  eq(stored.front, 'repasable');
+  const rows = await tdb.listReviews();
+  eq(rows.length, 1);
+  deepEq(rows[0], review);
+});
+
+test('db: applyReview is atomic (failed review insert or missing card writes nothing)', async () => {
+  await resetTestDb();
+  const c = newCard({ front: 'atómica', back: 'x' });
+  await tdb.addCards([c]);
+  const ts = '2026-10-02T12:00:00.000Z';
+  const state1 = next(initialState(), 3, ts, { fuzz: false }, c.id);
+  const review = reviewRow(c.id, ts, 3, 'new');
+  await tdb.applyReview(review, state1);
+
+  // Same review id again: reviews.add fails, so the card must keep state1.
+  const state2 = next(state1, 1, '2026-10-03T12:00:00.000Z', { fuzz: false }, c.id);
+  await throws(() => tdb.applyReview({ ...review, rating: 1 }, state2), 'duplicate review id must throw');
+  deepEq((await tdb.getCard(c.id)).srs.rec, state1, 'card state rolled back');
+  eq((await tdb.listReviews()).length, 1);
+
+  // Unknown card: the review row must not be written.
+  await throws(() => tdb.applyReview(reviewRow('missing-card', ts, 3, 'new'), state1), 'missing card must throw');
+  eq((await tdb.listReviews()).length, 1);
+  await throws(() => tdb.applyReview({ ...reviewRow(c.id, ts, 3, 'new'), dir: 'nope' }, state1), 'invalid direction');
+  eq((await tdb.listReviews()).length, 1);
+});
+
+test('db: undoReview marks undoneAt, restores the srs state, keeps the row and updatedAt', async () => {
+  await resetTestDb();
+  const c = newCard({ front: 'deshacer', back: 'x' });
+  await tdb.addCards([c]);
+  const ts = '2026-10-02T12:00:00.000Z';
+  const prev = initialState();
+  const state1 = next(prev, 1, ts, { fuzz: false }, c.id);
+  const review = reviewRow(c.id, ts, 1, 'new');
+  await tdb.applyReview(review, state1);
+  await sleep(5);
+
+  const undoneAt = await tdb.undoReview(review.id, c.id, 'rec', prev);
+  assert(typeof undoneAt === 'string' && !Number.isNaN(Date.parse(undoneAt)), 'returns the undoneAt timestamp');
+  const rows = await tdb.listReviews();
+  eq(rows.length, 1, 'the review row is never deleted');
+  eq(rows[0].undoneAt, undoneAt);
+  eq(rows[0].rating, 1, 'the rest of the row is unchanged');
+  const stored = await tdb.getCard(c.id);
+  deepEq(stored.srs.rec, initialState(), 'srs equals the state before the rating');
+  eq(stored.updatedAt, c.updatedAt, 'undo never bumps updatedAt');
+
+  await throws(() => tdb.undoReview('missing-review', c.id, 'rec', prev), 'unknown review must throw');
+  await throws(() => tdb.undoReview(review.id, c.id, 'rec', prev), 'a review cannot be undone twice');
+  eq((await tdb.listReviews())[0].undoneAt, undoneAt, 'the first undo timestamp is kept');
+  await resetTestDb();
+});
+
+test('db: applyReview / undoReview refuse a stale session (card already rated elsewhere)', async () => {
+  await resetTestDb();
+  const c = newCard({ front: 'dos pestañas', back: 'x' });
+  await tdb.addCards([c]);
+  const prev = initialState();
+  const tsA = '2026-10-02T12:00:00.000Z';
+  const tsB = '2026-10-02T12:00:30.000Z';
+
+  // Tab A rates the new card 'Bien'.
+  const stateA = next(prev, 3, tsA, { fuzz: false }, c.id);
+  const reviewA = reviewRow(c.id, tsA, 3, 'new');
+  await tdb.applyReview(reviewA, stateA, prev);
+  deepEq((await tdb.getCard(c.id)).srs.rec, stateA);
+
+  // Tab B still thinks the card is new: its rating must be refused and write nothing.
+  const stateB = next(prev, 1, tsB, { fuzz: false }, c.id);
+  await throws(() => tdb.applyReview(reviewRow(c.id, tsB, 1, 'new'), stateB, prev), 'stale rating must throw');
+  eq((await tdb.listReviews()).length, 1, 'no second review row');
+  deepEq((await tdb.getCard(c.id)).srs.rec, stateA, 'stored state unchanged');
+
+  // A rating computed from the current state is accepted.
+  const stateC = next(stateA, 3, tsB, { fuzz: false }, c.id);
+  const reviewC = reviewRow(c.id, tsB, 3, 'learning');
+  await tdb.applyReview(reviewC, stateC, stateA);
+  eq((await tdb.listReviews()).length, 2);
+
+  // Undo of the older rating is refused (it is no longer the latest one) ...
+  await throws(() => tdb.undoReview(reviewA.id, c.id, 'rec', prev), 'only the latest rating can be undone');
+  // ... and so is an undo with the wrong card or direction.
+  await throws(() => tdb.undoReview(reviewC.id, 'other-card', 'rec', stateA), 'wrong card');
+  await throws(() => tdb.undoReview(reviewC.id, c.id, 'prod', stateA), 'wrong direction');
+  const rows = await tdb.listReviews();
+  eq(rows.filter((r) => r.undoneAt).length, 0, 'nothing was marked as undone');
+  deepEq((await tdb.getCard(c.id)).srs.rec, stateC);
+
+  // The latest rating can be undone; the stored state equals the replay of the log again.
+  await tdb.undoReview(reviewC.id, c.id, 'rec', stateA);
+  deepEq((await tdb.getCard(c.id)).srs.rec, stateA);
+  await resetTestDb();
+});
+
+// ------------------------------------------------------------ runner
 
 run();

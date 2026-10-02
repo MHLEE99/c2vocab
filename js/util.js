@@ -87,6 +87,36 @@ export function fmtDate(iso) {
   }
 }
 
+/**
+ * FNV-1a 32-bit hash of a string. Returns an unsigned 32-bit integer.
+ * Used to seed the PRNG below so that "random" choices are repeatable.
+ */
+export function hashString(str) {
+  const s = String(str);
+  let h = 0x811c9dc5; // FNV offset basis
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193); // FNV prime, 32-bit multiply
+  }
+  return h >>> 0;
+}
+
+/**
+ * mulberry32: tiny seeded pseudo-random generator.
+ * Returns a function that gives a number in [0, 1) on each call.
+ * Same seed -> same sequence (needed for deterministic fuzz and shuffles).
+ */
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function random() {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** Small sleep helper (used by tests and by undo timing). */
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

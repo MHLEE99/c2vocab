@@ -682,3 +682,258 @@ details.help summary {
     padding: 20px 24px;
   }
 }
+
+/* ---------- home: section titles ---------- */
+
+h2.section-title {
+  margin: 18px 0 8px;
+}
+
+h2.section-title-first {
+  margin-top: 0;
+}
+
+/* ---------- Estudiar (review screen) ---------- */
+
+.review {
+  /* extra room so the last line of the card never hides behind the fixed action bar */
+  padding-bottom: 96px;
+}
+
+.review-status {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  min-height: 160px;
+}
+
+.review-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge-kind-new {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.badge-kind-review {
+  background: #e3f4ea;
+  color: #14633a;
+}
+
+.badge-kind-learning {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.review-front {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 14px 0 4px;
+  overflow-wrap: anywhere;
+}
+
+.review-answer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.review-back {
+  font-size: 18px;
+  margin: 0 0 6px;
+  white-space: pre-line;
+}
+
+.review-ko {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+.review-example {
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 10px 10px 0;
+  font-size: 16px;
+}
+
+.review-extra {
+  font-size: 14px;
+  margin: 6px 0;
+  white-space: pre-line;
+}
+
+.review-extra strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Keyboard help: only useful with a real keyboard, so desktop only. */
+.review-keys {
+  display: none;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 10px 2px 0;
+}
+
+@media (min-width: 800px) {
+  .review-keys {
+    display: block;
+  }
+}
+
+/* Reveal / rating buttons: fixed at the bottom, directly above the bottom nav
+   (the nav itself already carries the bottom safe-area inset). */
+.review-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  z-index: 15;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px calc(12px + var(--safe-right)) 10px calc(12px + var(--safe-left));
+}
+
+.review-actions-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.review-undo-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.review-undo-center {
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.review-undo {
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.review-undo:disabled {
+  opacity: 0.5;
+}
+
+.rating-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.rate-btn {
+  min-height: 60px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.rate-btn:active {
+  filter: brightness(0.95);
+}
+
+.rate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rate-label {
+  white-space: nowrap;
+}
+
+.rate-interval {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Colours of the four answers (also used by the summary pills). The labels keep
+   them readable in monochrome. */
+.rate-again {
+  background: var(--danger-soft);
+  border-color: #e9b4ae;
+  color: #9b1c15;
+}
+
+.rate-hard {
+  background: #fff0dc;
+  border-color: #efc78f;
+  color: #8a4b00;
+}
+
+.rate-good {
+  background: #e3f4ea;
+  border-color: #a5d6b9;
+  color: #14633a;
+}
+
+.rate-easy {
+  background: var(--primary-soft);
+  border-color: #a9c8de;
+  color: var(--primary-dark);
+}
+
+/* ---------- session summary ---------- */
+
+.summary-title {
+  font-size: 22px;
+  margin: 0 0 14px;
+}
+
+.review-summary .stat {
+  background: var(--bg);
+}
+
+.rating-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.rating-count {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* While studying, toasts sit above the action bar instead of covering its buttons. */
+body.studying .toast-root {
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 150px);
+}
