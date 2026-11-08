@@ -11,7 +11,7 @@
 //   - no automatic skipWaiting: the page shows a banner and asks with { type: 'SKIP_WAITING' }.
 
 // @release-version
-const VERSION = '20261108-122822';
+const VERSION = '20261108-130643';
 // @release-version-end
 
 // @release-precache
