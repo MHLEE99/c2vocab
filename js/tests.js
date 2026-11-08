@@ -17,6 +17,9 @@ import './tests/importer.test.js';
 import './tests/backup.test.js';
 import './tests/prompt.test.js';
 import './tests/reminder.test.js';
+// Step 4 test files (PWA: platform rules, manifest / icons / service worker files).
+import './tests/platform.test.js';
+import './tests/pwa.test.js';
 
 // ------------------------------------------------------------ util.js
 

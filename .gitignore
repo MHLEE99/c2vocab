@@ -1,5 +1,8 @@
 exports/
 imports/
+# export files (every card, the review log, device name): never let deploy.bat publish one
+c2vocab-*.json
 *.local.json
 Thumbs.db
 .DS_Store
+__pycache__/

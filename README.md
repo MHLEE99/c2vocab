@@ -146,6 +146,66 @@ PC에서는 `Ctrl+Enter`로 저장합니다.
 엑셀에서 복사한 표(탭 구분)나 `표현 | 정의 | 예문 | 태그` 형식의 줄, 직접 만든 JSON 파일(`imports/` 폴더에 보관)도 같은 화면에서 가져올 수 있습니다.
 프롬프트 전문과 매주 하는 순서는 `docs/PROMPT.md`에 있습니다.
 
+## 배포하기 (GitHub Pages에 올리기)
+
+앱은 https://mhlee99.github.io/c2vocab/ 에서 서비스됩니다 (GitHub 저장소 `MHLEE99/c2vocab`, `main` 브랜치의 루트 폴더를 Pages로 공개).
+
+1. `deploy.bat`을 더블클릭합니다. 검은 창에서 순서대로 진행됩니다:
+   - 먼저 마지막 배포 이후 바뀐 파일이 있는지 확인합니다. 없으면 `Nada que publicar`라고 알려 주고 끝납니다 (새 버전을 만들지 않으므로, 두 번 연달아 눌러도 아이폰에 '새 버전' 배너가 뜨지 않습니다).
+   - `tools/release.py`가 새 버전 번호(UTC 시각, 예: `20261108-051300`)를 찍고, 서비스 워커(`sw.js`)가 오프라인용으로 저장할 파일 목록을 갱신합니다.
+   - 바뀐 파일을 모두 커밋하고(`Deploy <버전>`) GitHub로 보냅니다.
+   - **첫 배포 때는 GitHub 로그인 창**이 뜹니다. 브라우저로 로그인하면 됩니다.
+2. 1~2분 뒤에 https://mhlee99.github.io/c2vocab/ 에 반영됩니다.
+3. 내보내기 파일(`c2vocab-날짜-기기이름.json`)은 프로젝트 폴더 어디에 두어도 git이 무시하므로 GitHub에 올라가지 않습니다. 그래도 `exports/` 폴더에 두는 편이 깔끔합니다.
+
+- `sw.js`의 `VERSION`/`PRECACHE`와 `js/version.js`의 `APP_VERSION`은 **손으로 고치지 마세요**. `python tools/release.py`가 채웁니다.
+  확인만 하려면: `python tools/release.py --check` (목록이 오래됐으면 오류로 끝납니다).
+- 앱 아이콘(`icons/*.png`)은 `python tools/save_icons.py`를 띄운 채 http://localhost:8080/tools/make-icons.html?post=1 을 열면 다시 만들어집니다.
+  (이미 만들어져 있으니 평소에는 할 필요가 없습니다.)
+
+## 아이폰에 설치하기
+
+1. 아이폰의 **Safari**로 https://mhlee99.github.io/c2vocab/ 을 엽니다. (Chrome이 아니라 Safari여야 홈 화면 추가가 제대로 됩니다.)
+2. 화면 아래 **공유** 버튼(네모에서 화살표가 올라가는 모양)을 누릅니다.
+3. 아래로 내려 **홈 화면에 추가**를 누르고, 이름(`C2 Vocab`)을 확인한 뒤 **추가**.
+4. 이제부터는 **홈 화면의 `C2 Vocab` 아이콘**으로 엽니다. 주소창 없이 앱처럼 열리고, 인터넷이 없어도 동작합니다.
+
+Inicio 맨 위에 `Instala C2 Vocab en la pantalla de inicio` 안내가 뜨면 아직 Safari 탭에서 쓰고 있다는 뜻입니다.
+`Más tarde`를 누르면 다음 날까지 숨겨집니다. 설치한 앱 안에서는 뜨지 않습니다.
+
+카카오톡 메시지의 링크나 Chrome으로 열면 `Abre C2 Vocab en Safari` 안내가 뜹니다. 그 안에서는 홈 화면에 설치할 수 없으니,
+`Copiar dirección`으로 주소를 복사해 Safari에 붙여넣어 연 다음 위 순서대로 설치하세요.
+
+## 처음 설치한 뒤 데이터 옮기기 (PC → 아이폰)
+
+1. PC의 앱에서 `Ajustes → Exportar todo`. `다운로드` 폴더에 `c2vocab-날짜-기기이름.json` 파일이 생깁니다.
+2. 그 파일을 아이폰으로 보냅니다. 셋 중 편한 방법 하나:
+   - 카카오톡 **나에게 보내기**로 파일 전송 → 아이폰에서 파일을 열어 `파일에 저장`
+   - 이메일로 나에게 보내기 → 아이폰 메일에서 첨부 파일을 `파일에 저장`
+   - PC에서 iCloud Drive 폴더에 넣기 → 아이폰 `파일` 앱에 자동으로 보입니다
+3. **설치한 앱(홈 화면 아이콘) 안에서** `Ajustes → Importar → Elegir archivo`로 그 파일을 고르고 가져옵니다.
+4. `Cargar ejemplos`는 **그 다음에** 누르세요 (먼저 누르면 예시 카드가 먼저 들어가서 섞입니다. 섞여도 합쳐지긴 합니다).
+
+새 기기의 Inicio에 카드가 하나도 없으면 `Empezar en este dispositivo` 안내가 같은 순서를 알려 줍니다.
+아직 Safari 탭에서 보고 있을 때는 이 안내에 `Importar` 버튼이 없고 "먼저 설치하고, 설치한 앱 안에서 가져오세요"라고만 나옵니다:
+Safari 탭에서 가져온 카드는 홈 화면 앱에 나타나지 않기 때문입니다 (iOS는 둘의 데이터를 따로 보관합니다).
+
+## 새 버전 알림 배너
+
+PC에서 `deploy.bat`으로 새 버전을 올리면, 아이폰 앱은 다음에 열릴 때(또는 1시간마다) 새 버전을 확인합니다.
+준비되면 화면 아래에 **`Nueva versión disponible`** 배너가 뜹니다.
+
+- `Actualizar`: 새 버전으로 새로 고침합니다. (1초 정도)
+- `Después`: 이번에는 넘어갑니다. 다음에 앱을 열면 다시 뜹니다.
+- 공부(Estudiar) 중에는 자동으로 새로 고침하지 않습니다. 배너만 떠 있고 `Actualizar`를 눌러야 바뀝니다.
+- `Ajustes → Instalación → Buscar actualización`으로 지금 바로 확인할 수도 있고, 현재 버전 번호도 거기에 보입니다.
+
+## 주의: iOS는 홈 화면 앱과 Safari 탭의 데이터가 별개
+
+아이폰은 **홈 화면에 설치한 앱**과 **Safari 탭**에 서로 다른 저장소를 씁니다. 한쪽에서 가져온 카드가 다른 쪽에는 보이지 않습니다.
+그러니 데이터 가져오기(Importar)와 공부는 **항상 설치한 앱 안에서** 하세요. 모르고 Safari 탭에서 카드를 넣었다면,
+그 탭에서 `Exportar todo` → 설치한 앱에서 `Importar`로 합치면 됩니다.
+
 ## 데이터는 어디에 있나요?
 
 - 브라우저 안의 IndexedDB(데이터베이스 이름 `c2vocab`)에 저장됩니다. 파일로는 보이지 않습니다.
@@ -156,11 +216,14 @@ PC에서는 `Ctrl+Enter`로 저장합니다.
 ## 테스트 페이지
 
 http://localhost:8080/test.html 을 열면 모든 줄이 `PASS`여야 합니다. 탭 제목에 "N passed, 0 failed"가 보이면 정상입니다.
+`pwa:`로 시작하는 줄은 매니페스트, 아이콘 파일, `sw.js`의 파일 목록을 실제로 내려받아 확인합니다 (아이콘이 없으면 일부러 FAIL이 납니다).
+배포한 뒤에는 https://mhlee99.github.io/c2vocab/test.html 에서도 같은 검사를 할 수 있습니다.
 
 ## 다음 단계
 
 - (완료) 1단계: 뼈대 + 저장소 + 빠른 추가 + 개인 사전
 - (완료) 2단계: SM-2 복습 엔진 + 일일 복습 화면 (`Estudiar`)
 - (완료) 3단계: 내보내기/가져오기/병합 + 자동 복사본 + Claude로 대량 카드 만들기
-- 다음: 4단계: PWA + GitHub Pages → 아이폰에 설치
-- 이후: 산출(producción)/빈칸 모드, 통계, Dropbox 동기화, DELE 모드 (자세한 계획은 `docs/plan.json`)
+- (완료) 4단계: PWA + GitHub Pages → 아이폰에 설치 (`deploy.bat`, 오프라인 동작, 새 버전 배너)
+- 다음: 5단계: 산출(producción)/빈칸 모드 + Bandeja
+- 이후: 통계, Dropbox 동기화, DELE 모드 (자세한 계획은 `docs/plan.json`)

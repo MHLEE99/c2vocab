@@ -4,6 +4,9 @@ import { allCardsIncludingDeleted, listReviews, getSettings, getMeta, setMeta, S
 import { exportFile } from '../export.js';
 import { listBackups } from '../backup.js';
 import { fmtDate } from '../util.js';
+import { APP_VERSION } from '../version.js';
+import { isStandalone } from '../platform.js';
+import { checkForUpdate, isUpdateAvailable, canInstall, promptInstall } from '../sw-client.js';
 import { h, toast, openSheet, closeSheet } from './components.js';
 
 function errorText(err) {
@@ -239,7 +242,110 @@ export async function render(container) {
     h(
       'p',
       { class: 'hint-ko' },
-      "'sí'이면 브라우저가 저장 공간이 부족해도 이 앱의 데이터를 마음대로 지우지 않습니다.\n'no'여도 평소에는 문제없지만, 정기적으로 'Exportar todo'를 해 두세요.\n아이폰: 4단계에서 앱을 홈 화면에 설치하면 데이터가 더 안전하게 보관됩니다."
+      "'sí'이면 브라우저가 저장 공간이 부족해도 이 앱의 데이터를 마음대로 지우지 않습니다.\n'no'여도 평소에는 문제없지만, 정기적으로 'Exportar todo'를 해 두세요.\n아이폰: 앱을 홈 화면에 설치하면(아래 'Instalación') 데이터가 더 안전하게 보관됩니다."
+    )
+  );
+
+  // ------------------------------------------------------------ Instalación
+
+  container.appendChild(h('h2', { class: 'section-title' }, 'Instalación'));
+  const standalone = isStandalone({
+    navigatorStandalone: navigator.standalone === true,
+    matchMediaStandalone: typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches,
+  });
+  container.appendChild(
+    h(
+      'div',
+      { class: 'data-list' },
+      dataRow('Instalada como app', standalone ? 'sí' : 'no'),
+      dataRow('Versión', APP_VERSION),
+      dataRow('Nueva versión lista', isUpdateAvailable() ? 'sí' : 'no')
+    )
+  );
+
+  const updateBtn = h(
+    'button',
+    {
+      class: 'btn',
+      type: 'button',
+      onclick: async () => {
+        updateBtn.disabled = true;
+        try {
+          const result = await checkForUpdate();
+          if (result === 'sin-sw') toast('Sin service worker (modo desarrollo o navegador sin soporte)');
+          else if (result === 'disponible') toast("Nueva versión lista: pulsa 'Actualizar' en el aviso");
+          else if (result === 'descargando') toast('Descargando la nueva versión…');
+          else toast('Ya tienes la última versión');
+        } catch (err) {
+          console.error(err);
+          toast('No se pudo comprobar: ' + errorText(err));
+        } finally {
+          updateBtn.disabled = false;
+        }
+      },
+    },
+    'Buscar actualización'
+  );
+  const installRow = h('div', { class: 'btn-row' }, updateBtn);
+  container.appendChild(installRow);
+
+  // Chrome / Edge / Android offer an install dialog; the button appears when the browser allows it.
+  function addInstallButton() {
+    if (!canInstall() || installRow.querySelector('.install-btn')) return;
+    const installBtn = h(
+      'button',
+      {
+        class: 'btn btn-primary install-btn',
+        type: 'button',
+        onclick: async () => {
+          installBtn.disabled = true;
+          try {
+            const outcome = await promptInstall();
+            if (outcome === 'accepted') {
+              toast('Instalada: ábrela desde el icono de la pantalla de inicio');
+              installBtn.remove();
+            } else if (outcome === 'dismissed') {
+              toast('Instalación cancelada');
+              installBtn.remove(); // the browser gives one prompt per visit
+            } else {
+              toast('El navegador no ofrece la instalación ahora');
+              installBtn.remove();
+            }
+          } catch (err) {
+            console.error(err);
+            toast('No se pudo instalar: ' + errorText(err));
+            installBtn.disabled = false;
+          }
+        },
+      },
+      'Instalar'
+    );
+    installRow.appendChild(installBtn);
+  }
+  addInstallButton();
+  // The browser may fire beforeinstallprompt after this screen was drawn.
+  function onInstallAvailable() {
+    if (!installRow.isConnected) {
+      // This render was replaced by a newer one: stop listening for it.
+      document.removeEventListener('c2:install-available', onInstallAvailable);
+      return;
+    }
+    addInstallButton();
+  }
+  document.addEventListener('c2:install-available', onInstallAvailable);
+
+  container.appendChild(
+    h(
+      'p',
+      { class: 'hint-ko' },
+      "아이폰에 설치하기: Safari로 https://mhlee99.github.io/c2vocab/ 를 열고 → 아래 공유 버튼(네모에 화살표) → '홈 화면에 추가' → 추가. 그다음부터는 홈 화면의 'C2 Vocab' 아이콘으로 엽니다.\n새 버전이 나오면 앱 아래에 'Nueva versión disponible' 알림이 뜹니다. 'Actualizar'를 누르면 새로 고침됩니다. 'Buscar actualización'은 지금 바로 확인합니다."
+    )
+  );
+  container.appendChild(
+    h(
+      'p',
+      { class: 'hint-ko warn-text' },
+      '주의: iOS는 홈 화면 앱과 Safari 탭의 데이터를 따로 보관합니다. 데이터 가져오기(Importar)는 반드시 설치한 앱 안에서 하세요.'
     )
   );
 

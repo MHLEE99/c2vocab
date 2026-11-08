@@ -10,6 +10,8 @@ import * as ajustes from './ui/ajustes.js';
 import * as importar from './ui/importar.js';
 import * as copias from './ui/copias.js';
 import { openQuickAdd } from './ui/quickadd.js';
+import { shouldRegisterSw } from './platform.js';
+import { registerServiceWorker, setupInstallPrompt } from './sw-client.js';
 
 // Route options:
 //   nav: false     not listed in the bottom nav
@@ -167,9 +169,24 @@ async function requestPersistence() {
   await setMeta('storagePersist', granted ? 'si' : 'no');
 }
 
+/**
+ * Service worker (offline + update banner). Registered only on https (the published site) or
+ * with ?sw=1 on http (acceptance run): daily development on localhost stays cache-free.
+ * A new version is never applied by an automatic reload while the study screen is open.
+ */
+function setupServiceWorker() {
+  const { protocol, hostname, search } = window.location;
+  if (!shouldRegisterSw({ protocol, hostname, search })) return;
+  registerServiceWorker({
+    shouldHoldReload: () => currentBase === '#/estudiar' && review.isSessionRunning(),
+  }).catch((err) => console.error(err));
+}
+
 async function main() {
   await initMeta();
   requestPersistence().catch((err) => console.error(err)); // in the background
+  setupInstallPrompt(); // Chrome/Edge/Android: captures beforeinstallprompt for Ajustes -> Instalar
+  setupServiceWorker();
   renderNav();
   document.getElementById('fab').addEventListener('click', () => openQuickAdd());
   window.addEventListener('hashchange', route);

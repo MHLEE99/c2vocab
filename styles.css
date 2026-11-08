@@ -1064,6 +1064,70 @@ input[type="file"] {
   margin-bottom: 0;
 }
 
+/* Blue informative banner: iOS install hint, empty-database onboarding (Inicio). */
+.banner-info {
+  background: var(--primary-soft);
+  border-color: #b9d3e6;
+}
+
+.banner-info .hint-ko {
+  color: var(--text);
+}
+
+/* ---------- "Nueva versión disponible" banner (sw-client.js) ----------
+   Fixed above the '+' button, under the toast; buttons are >= 44px tall (.btn).
+   On phones it spans the width, so like the toast it sits ABOVE the 56px FAB
+   (FAB bottom = nav + safe + 16px): the banner may stay on screen for a while
+   and must never hide the add button. */
+.update-banner {
+  position: fixed;
+  left: calc(12px + var(--safe-left));
+  right: calc(12px + var(--safe-right));
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px + 56px + 12px);
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  background: var(--surface);
+  border: 1px solid #b9d3e6;
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.update-banner-text {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.update-banner-hint {
+  margin: 2px 0 0;
+}
+
+.update-banner-actions {
+  display: flex;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+/* While studying, the banner sits above the fixed action bar (like the toast). */
+body.studying .update-banner {
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 150px);
+}
+
+@media (min-width: 800px) {
+  /* The FAB sits in the column gutter here, clear of the centred banner. */
+  .update-banner {
+    left: 50%;
+    right: auto;
+    bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+    width: min(var(--content-max), calc(100% - 24px));
+    transform: translateX(-50%);
+  }
+}
+
 .import-text {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 16px; /* never below 16px: iOS would zoom */

@@ -27,6 +27,11 @@ const RATINGS = [
 // The view currently on screen ({ alive, stop }) or null. destroy() stops its timer and listeners.
 let active = null;
 
+/** Is the study screen on screen right now? (sw-client asks before reloading for a new version) */
+export function isSessionRunning() {
+  return active !== null;
+}
+
 /** Called by the router before another view is shown. */
 export function destroy() {
   if (!active) return;

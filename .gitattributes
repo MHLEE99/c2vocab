@@ -1,0 +1,8 @@
+# Line endings are part of the deploy pipeline: tools/release.py and the pwa tests look for the
+# @release-* markers in sw.js / js/version.js. Keep every text file LF on checkout (this machine has
+# core.autocrlf=true), except Windows batch files, which cmd.exe wants as CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.ico binary

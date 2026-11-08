@@ -7,15 +7,41 @@ served as plain static files. The owner is not a developer: explain changes step
 
 ```
 c2vocab/
-  index.html          app shell (top bar, #view, FAB, bottom nav, toast/sheet roots)
+  index.html          app shell (top bar, #view, FAB, bottom nav, toast/sheet roots) + PWA head tags
   styles.css          mobile-first, iOS-safe styles; desktop >= 800px centred 720px column
-  test.html           browser test runner (open /test.html)
+  test.html           browser test runner (open /test.html); deployed but NEVER precached
+  sw.js               service worker: VERSION + PRECACHE between @release-* markers (stamped by tools/release.py),
+                      cache 'c2vocab-<VERSION>', app navigations (root, index.html, extension-less paths) ->
+                      cached index.html, seeds network-first, everything else cache-first; a navigation to a
+                      real file (sw.js, seeds/base.json) returns the file; never caches test.html / js/tests /
+                      tools / docs
+  manifest.webmanifest  name 'C2 Vocab', start_url './', scope './', standalone, icons in icons/
+  icons/              favicon.svg (hand-written), icon-192.png, icon-512.png, maskable-512.png,
+                      apple-touch-icon.png (PNGs drawn by tools/make-icons.html; committed)
+  .nojekyll           empty: GitHub Pages serves the files as they are
+  .gitattributes      LF on checkout for every text file (*.bat CRLF): the @release-* markers must survive
+                      core.autocrlf=true; release.py and the pwa tests accept LF or CRLF anyway
   start.bat           double-click: python tools/serve.py 8080 + opens the browser
+  deploy.bat          double-click: stops with 'Nada que publicar' when git status is clean and release.py --check
+                      passes (no new version for nothing); else tools/release.py -> git add/commit "Deploy <version>"
+                      -> git push (CRLF, UTF-8)
   tools/serve.py      static server with Cache-Control: no-store and correct JS MIME type (--lan for phone testing)
+  tools/release.py    stamps VERSION/PRECACHE in sw.js and APP_VERSION in js/version.js; --check exits 1 when stale;
+                      --print-version (used by deploy.bat). Fails when a listed file or an icon is missing
+  tools/make-icons.html  standalone canvas page that draws the 4 PNG icons; ?post=1 POSTs them to save_icons.py
+  tools/save_icons.py    receiver on 127.0.0.1:8766 that writes icons/<name>.png (PNG signature + allowed names)
   js/
     app.js            entry: hash router (#/, #/explorar, #/papelera, #/ajustes, #/estudiar[?modo=nuevas],
                       #/importar, #/copias), nav, FAB, view lifecycle (optional destroy()), cards-changed
-                      refresh (skipped on #/estudiar), one-time navigator.storage.persist() request
+                      refresh (skipped on #/estudiar), one-time navigator.storage.persist() request,
+                      service worker registration (shouldRegisterSw) + beforeinstallprompt capture
+    platform.js       PURE: shouldRegisterSw, isIos, isIosSafari, isStandalone, installHint ({kind:'ios'} Safari,
+                      {kind:'ios-other'} Chrome/KakaoTalk/webviews on iOS), emptyDbHint, onboardingHint
+                      ('import' | 'install-first' while the iOS banner shows)
+    sw-client.js      registerServiceWorker (update banner 'Nueva versión disponible', one reload on
+                      controllerchange, hourly + on-visible update checks), checkForUpdate, isUpdateAvailable,
+                      applyUpdate, setupInstallPrompt / canInstall / promptInstall
+    version.js        APP_VERSION between @release-app-version markers (stamped by tools/release.py; shown in Ajustes)
     util.js           uuid, nowIso, normalize, escapeHtml, debounce, fmtDate, sleep
     taxonomy.js       TYPES, REGISTERS, REGIONS, STATUSES, DIRECTIONS, SUGGESTED_TEMAS
     srs.js            pure SM-2 scheduler: SM2, next, predict, replay, studyDay, isDue, isSubDayLearning
@@ -35,15 +61,21 @@ c2vocab/
     reminder.js       PURE: exportReminder / exportReminderText (Inicio banner after 7 days without export)
     tests.js          test entry: util/capture/db tests (db tests use database 'c2vocab_test'), calls run()
     tests/            harness.js (test/assert/eq/deepEq/throws/run) + srs, session, stats, merge, importer,
-                      backup (export/backup/db step 3), prompt, reminder .test.js files
+                      backup (export/backup/db step 3), prompt, reminder, platform (pure), pwa (same-origin
+                      fetches of manifest / icons / sw.js / version.js; FAILS when icons are missing) .test.js
     ui/
       components.js   h() DOM builder, toast, openSheet/closeSheet, chip, badge, emitCardsChanged
-      home.js         Inicio: export reminder banner, today's numbers (queueInfo/countsToday/streak),
-                      Estudiar, Nuevas del día, library counts, Cargar ejemplos, Añadir
+      home.js         Inicio: export reminder banner, iOS install banner (installHint, snooze meta
+                      installHintSnoozeDay; 'ios-other' says open in Safari + Copiar dirección), empty-database
+                      onboarding banner (onboardingHint: import first, or install first on an iOS tab), today's numbers
+                      (queueInfo/countsToday/streak), Estudiar, Nuevas del día, library counts, Cargar ejemplos, Añadir
       review.js       Estudiar: session screen (front -> reveal -> 4 ratings), undo, time-limit sheet,
                       summary (takes a 'session' snapshot); exports render(container, params) + destroy()
+                      + isSessionRunning() (sw-client holds the update reload while it is true)
       ajustes.js      Ajustes: Exportar todo, links to Importar / Copias, device name, storage persistence,
-                      data counts; runExport() (exportFile + 'Compartir archivo' sheet), exportToastText
+                      Instalación (installed?, APP_VERSION, Buscar actualización, Instalar when
+                      beforeinstallprompt fired, iPhone instructions, separate-storage warning), data counts;
+                      runExport() (exportFile + 'Compartir archivo' sheet), exportToastText
       importar.js     Importar (#/importar): paste/file -> preview -> import cards or merge an export file;
                       'Pedir tarjetas a Claude' (Copiar prompt). State is module-level (survives re-render)
       copias.js       Copias automáticas (#/copias): list of snapshots, Crear copia ahora, Restaurar sheet
@@ -61,11 +93,34 @@ c2vocab/
 
 ## Hard rules
 
-- Vanilla ES modules only. NO build step, NO npm, NO Node, NO CDN/runtime loads (the app must work offline
-  from step 4). The only library is `./vendor/dexie.min.js`, loaded as a classic `<script>` BEFORE the module.
+- Vanilla ES modules only. NO build step, NO npm, NO Node, NO CDN/runtime loads (the app works offline
+  since step 4). The only library is `./vendor/dexie.min.js`, loaded as a classic `<script>` BEFORE the module.
 - ALL paths are relative (`./js/app.js`, `./seeds/base.json`). Never a leading slash: the same files are
-  served from `https://<user>.github.io/c2vocab/` later.
-- Served with `python tools/serve.py` (plain static files, no caching). No service worker until step 4.
+  served from `https://mhlee99.github.io/c2vocab/` (a sub-path). In `sw.js` every URL is resolved against
+  `self.registration.scope` (`new URL('./index.html', scope)`), never against '/'.
+- Served with `python tools/serve.py` (plain static files, no caching) for development.
+- Service worker rules: it registers only on `https:` or when the query has `sw` (`?sw=1`, see
+  `platform.shouldRegisterSw`), so plain localhost development never caches anything. NEVER edit `VERSION` /
+  `PRECACHE` in `sw.js` or `APP_VERSION` in `js/version.js` by hand: run `python tools/release.py`
+  (`--check` tells whether they are stale; a new js/seed/icon file makes them stale). The markers are matched
+  with `\r?\n` (release.py, pwa tests) and `.gitattributes` keeps the files LF, so a CRLF checkout never breaks
+  the stamp; `stamp()` fails loudly (exit 1) when a marker is missing. The worker never
+  caches `test.html`, `js/tests/*`, `tools/*`, `docs/*`, and never adds non-precached files except seeds.
+  Navigations get the cached `index.html` only for app routes (`isAppRoute`: root, `index.html`, a last path
+  segment without extension); a navigation to a real file falls through to the normal branches. No
+  automatic `skipWaiting`: the page shows the 'Nueva versión disponible' banner and sends
+  `{ type: 'SKIP_WAITING' }`; the reload on `controllerchange` happens once and never while `#/estudiar` has a
+  running session (the banner stays, 'Actualizar' reloads).
+- Deployment routine (the learner does it): double-click `deploy.bat` -> stops with 'Nada que publicar' when
+  `git status --porcelain` is empty and `release.py --check` passes (a second click must not push an identical
+  app with a new VERSION) -> otherwise `tools/release.py` stamps the version and the precache list -> commit
+  "Deploy <version>" -> push -> GitHub Pages (main, root) publishes https://mhlee99.github.io/c2vocab/ in 1-2
+  minutes. Export files (`c2vocab-*.json`) are git-ignored anywhere in the tree so `git add -A` never publishes
+  one. Agents never run `deploy.bat` or git for the learner.
+- iOS keeps separate storage for a Safari tab and for the installed home-screen app. On an iOS tab Inicio shows
+  the install banner (Safari: share button steps; other iOS browsers/webviews: open in Safari) and, when the
+  database is empty, the onboarding banner WITHOUT an Importar button ('install-first'): the import happens
+  inside the installed app.
 - UI labels in SPANISH (Inicio, Explorar, Papelera, Guardar, Cancelar, Buscar, Restaurar, Eliminar,
   Deshacer...). Short helper text in KOREAN where the learner needs guidance. `<html lang="es">`.
 - Mobile-first, iPhone Safari safe: `viewport-fit=cover` + `env(safe-area-inset-*)`, >= 44px tap targets,
@@ -199,7 +254,7 @@ front/back/example/type/tags), pipe lines `front | back | example | tags`, and t
 cards:   'id, updatedAt, deletedAt, type, status, *tags, srs.rec.due, srs.prod.due'
 reviews: 'id, cardId, ts'
 meta:    'key'          rows: schemaVersion, deviceId, deviceName, algo, settings, lastChoice,
-                        storagePersist, exportSnoozeDay
+                        storagePersist, exportSnoozeDay, installHintSnoozeDay
 backups: '++id, createdAt'   rows: { id, createdAt, reason, json (envelope string), cards, reviews }
 ```
 
@@ -212,6 +267,11 @@ Entries separated by blank lines. Line 1 = front (or `front :: back | example`).
 
 - Run: double-click `start.bat`, or `python tools/serve.py` in this folder, then http://localhost:8080
 - Test: http://localhost:8080/test.html — every row must say PASS; the tab title shows "N passed, M failed".
+  The `pwa:` tests fetch the manifest, icons and sw.js from the same origin (they also work on the live site).
+- Service worker acceptance run: http://127.0.0.1:8080/?sw=1 (registers the worker on that origin only);
+  `python tools/release.py` with a new version + reload shows the update banner.
+- Icons: `python tools/save_icons.py` (background) + open http://localhost:8080/tools/make-icons.html?post=1.
+- Deploy: `deploy.bat` (learner only). Check the stamp without writing: `python tools/release.py --check`.
 - Debug in the console: `await __c2.db.listCards()`.
 
 ## Step status (see docs/plan.json → step_plan)
@@ -219,7 +279,7 @@ Entries separated by blank lines. Line 1 = front (or `front :: back | example`).
 1. 뼈대 + 저장소 + 빠른 추가 + 개인 사전 (PC) — DONE
 2. SM-2 엔진 + 일일 복습 화면 (reconocimiento) — DONE
 3. 내보내기/가져오기/병합 + 백업 + Claude 대량 붙여넣기 — DONE
-4. PWA + GitHub Pages + 폰 설치 — pending
+4. PWA + GitHub Pages + 폰 설치 — DONE (repo MHLEE99/c2vocab, https://mhlee99.github.io/c2vocab/)
 5. Producción/cloze 방향 + Bandeja — pending
 6. 데이터 안전 강화 (마이그레이션 틀, 스키마 가드) — pending
 7. 통계 + 학습량 설정 + 시험일 — pending
@@ -231,9 +291,12 @@ Entries separated by blank lines. Line 1 = front (or `front :: back | example`).
 
 ## Known follow-ups (decide in the step named)
 
-- Step 4 (phone onboarding): on a new device the learner should IMPORT their export file (or sync) before
-  pressing 'Cargar ejemplos'. Seed cards now get deterministic ids ('seed:' + dupKey), so seeds loaded on two
-  fresh devices merge into one card; seeds loaded before 2026-10-03 have random ids and would duplicate.
+- Phone onboarding (step 4 shows the hint; sync in step 8 may automate it): on a new device the learner should
+  IMPORT their export file before pressing 'Cargar ejemplos' (Inicio shows the 'Empezar en este dispositivo'
+  banner while the database is empty). Seed cards get deterministic ids ('seed:' + dupKey), so seeds loaded
+  on two fresh devices merge into one card; seeds loaded before 2026-10-03 have random ids and would duplicate.
+- iOS keeps separate storage for the home-screen app and Safari tabs; the Ajustes warning and README explain it.
+  A standalone-only data check (warn when the same data exists in both) could come with step 6.
 - Step 8/9 (sync): cards merge by id only. The same expression created independently on two devices becomes two
   live cards; mergeDoc reports them (duplicateKeys, stats.cardsDuplicateKey) and the UI warns. Design a real
   duplicate resolution (canonical id + review remapping) before automatic sync.
