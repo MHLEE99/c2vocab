@@ -11,7 +11,7 @@
 //   - no automatic skipWaiting: the page shows a banner and asks with { type: 'SKIP_WAITING' }.
 
 // @release-version
-const VERSION = '20261108-055121';
+const VERSION = '20261108-122822';
 // @release-version-end
 
 // @release-precache
@@ -33,6 +33,7 @@ const PRECACHE = [
   './js/platform.js',
   './js/prompt.js',
   './js/reminder.js',
+  './js/seeds.js',
   './js/session.js',
   './js/srs.js',
   './js/stats-lite.js',

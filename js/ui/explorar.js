@@ -30,7 +30,7 @@ export function renderExampleHtml(example) {
 }
 
 function haystack(card) {
-  return normalize([card.front, card.back, card.example, card.ko, (card.tags || []).join(' ')].join(' '));
+  return normalize([card.front, card.back, card.example, card.exampleKo, card.ko, (card.tags || []).join(' ')].join(' '));
 }
 
 function matchesQuery(card, tokens) {
@@ -205,6 +205,7 @@ export async function render(container) {
     if (card.back) body.appendChild(h('p', { class: 'card-back' }, card.back));
     if (card.ko) body.appendChild(h('p', { class: 'card-ko' }, card.ko));
     if (card.example) body.appendChild(h('p', { class: 'card-example', html: renderExampleHtml(card.example) }));
+    if (card.exampleKo) body.appendChild(h('p', { class: 'card-example-ko' }, card.exampleKo));
     if (card.tags && card.tags.length) {
       body.appendChild(h('div', { class: 'card-tags' }, card.tags.map((t) => h('span', { class: 'tag' }, t))));
     }
@@ -284,6 +285,8 @@ export async function render(container) {
     const back = h('textarea', { rows: 3, value: card.back });
     const ko = h('input', { type: 'text', value: card.ko });
     const example = h('textarea', { rows: 3, value: card.example, placeholder: 'Marca el hueco con [[...]]' });
+    // Cards stored before 2026-11-08 have no exampleKo key: show an empty field, not 'undefined'.
+    const exampleKo = h('textarea', { rows: 2, value: card.exampleKo || '', placeholder: '예문의 한국어 해석' });
     const exampleSource = h('input', { type: 'text', value: card.exampleSource, placeholder: "'redactado' o la fuente real" });
     const tagsInput = h('input', { type: 'text', value: (card.tags || []).join(', '), autocapitalize: 'off' });
     const colocaciones = h('textarea', { rows: 2, value: (card.colocaciones || []).join('\n') });
@@ -327,6 +330,7 @@ export async function render(container) {
             back: back.value,
             ko: ko.value.trim(),
             example: example.value.trim(),
+            exampleKo: exampleKo.value.trim(),
             exampleSource: exampleSource.value.trim(),
             tags: tagsInput.value,
             colocaciones: colocaciones.value.split('\n'),
@@ -354,6 +358,7 @@ export async function render(container) {
       field('Definición (español)', back),
       field('Coreano', ko),
       field('Ejemplo', example),
+      field('Traducción del ejemplo (coreano)', exampleKo),
       field('Fuente del ejemplo', exampleSource),
       field('Etiquetas (coma o espacio)', tagsInput),
       field('Colocaciones (una por línea)', colocaciones),

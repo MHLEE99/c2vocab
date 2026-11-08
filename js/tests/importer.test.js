@@ -492,3 +492,44 @@ test('importer: overwritePatch replaces with the incoming non-empty fields only'
   deepEq(overwritePatch(same, { front: 'poner coto a', tags: [] }), null, 'empty incoming tags keep the old ones');
   deepEq(overwritePatch(same, { front: 'poner coto a', back: 'otra' }), { back: 'otra' });
 });
+
+// ------------------------------------------------------------ exampleKo (translation of the example)
+
+test('importer: exampleKo is read from JSON, from its aliases, from a TSV header and from a ">>" line', () => {
+  const r = parseImport(
+    JSON.stringify([
+      { front: 'uno', example: 'Ej.', exampleKo: '해석' },
+      { front: 'dos', ejemplo: 'Ej.', ejemploKo: '해석 2' },
+      { front: 'tres', ejemplo: 'Ej.', 'traducción del ejemplo': '해석 3' },
+    ])
+  );
+  eq(r.rows[0].card.exampleKo, '해석');
+  eq(r.rows[1].card.exampleKo, '해석 2');
+  eq(r.rows[2].card.exampleKo, '해석 3');
+  const tsv = parseImport('front\texample\texampleKo\ncuatro\tEj.\t해석 4');
+  eq(tsv.format, 'tsv');
+  eq(tsv.rows[0].card.exampleKo, '해석 4');
+  const cap = parseImport('cinco\n: def\n> Ej.\n>> 해석 5');
+  eq(cap.format, 'captura');
+  eq(cap.rows[0].card.example, 'Ej.');
+  eq(cap.rows[0].card.exampleKo, '해석 5');
+  assert(!('exampleKo' in parseImport('seis\n: def').rows[0].card), 'absent when not given');
+});
+
+test('importer: enrichPatch takes exampleKo only with the example (or for the same sentence)', () => {
+  const noExample = newCard({ front: 'a', back: 'b' });
+  deepEq(enrichPatch(noExample, { front: 'a', example: 'Ej.', exampleKo: '해석' }), { example: 'Ej.', exampleKo: '해석' });
+  const own = newCard({ front: 'a', back: 'b', example: 'Mi ejemplo.' });
+  eq(enrichPatch(own, { front: 'a', example: 'Otro.', exampleKo: '다른 해석' }), null, 'another sentence: its translation is not taken');
+  deepEq(enrichPatch(own, { front: 'a', example: 'Mi ejemplo.', exampleKo: '내 예문.' }), { exampleKo: '내 예문.' }, 'same sentence: translation filled');
+  const translated = newCard({ front: 'a', back: 'b', example: 'Mi ejemplo.', exampleKo: '있음' });
+  eq(enrichPatch(translated, { front: 'a', example: 'Mi ejemplo.', exampleKo: '새 해석' }), null, 'a filled translation is kept');
+});
+
+test('importer: overwritePatch replaces the translation with the example and drops a stale one', () => {
+  const card = newCard({ front: 'a', back: 'b', example: 'Vieja.', exampleKo: '옛 해석' });
+  deepEq(overwritePatch(card, { front: 'a', example: 'Nueva.', exampleKo: '새 해석' }), { example: 'Nueva.', exampleKo: '새 해석' });
+  deepEq(overwritePatch(card, { front: 'a', example: 'Nueva.' }), { example: 'Nueva.', exampleKo: '' }, 'new sentence without translation: the old translation goes');
+  deepEq(overwritePatch(card, { front: 'a', exampleKo: '고친 해석' }), { exampleKo: '고친 해석' }, 'same sentence: only the translation changes');
+  eq(overwritePatch(card, { front: 'a', example: 'Vieja.' }), null, 'same sentence, no translation given: nothing changes');
+});

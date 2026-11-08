@@ -22,6 +22,8 @@ import './tests/platform.test.js';
 import './tests/pwa.test.js';
 // Service worker logic (sw.js source evaluated against fake self / caches / fetch, no real worker).
 import './tests/sw.test.js';
+// Seed cards ('Cargar ejemplos'): the pure plan and the real seeds/base.json.
+import './tests/seeds.test.js';
 
 // ------------------------------------------------------------ util.js
 
@@ -164,6 +166,25 @@ test('parseCapture: one-liner without example', () => {
   eq(cards[0].example, '');
 });
 
+test('parseCapture: ">>" is the Korean translation of the example (repeats append with a space)', () => {
+  const { cards } = parseCapture('x\n> Ej uno.\n>> 해석 하나.\n>> 둘.\n> Ej dos.');
+  eq(cards[0].example, 'Ej uno. Ej dos.');
+  eq(cards[0].exampleKo, '해석 하나. 둘.');
+  eq(parseCapture('x\n> solo ejemplo').cards[0].exampleKo, '');
+  eq(parseCapture('x\n>>').cards[0].exampleKo, '', 'an empty ">>" line adds nothing');
+  eq(parseCapture('x\n>>sin espacio').cards[0].exampleKo, 'sin espacio');
+  eq(parseCapture('x\n> > con espacio').cards[0].example, '> con espacio', 'only ">>" without a space is the translation');
+});
+
+test('parseCapture: one-liner third cell is the translation of the example', () => {
+  const { cards } = parseCapture('a raíz de :: como consecuencia de | [[A raíz de]] la crisis, cerraron. | 위기로 인해 문을 닫았다.');
+  eq(cards[0].back, 'como consecuencia de');
+  eq(cards[0].example, '[[A raíz de]] la crisis, cerraron.');
+  eq(cards[0].exampleKo, '위기로 인해 문을 닫았다.');
+  eq(parseCapture('a :: b | c').cards[0].exampleKo, '');
+  eq(parseCapture('a :: b | c | d | e').cards[0].exampleKo, 'd | e', 'extra pipes stay in the translation');
+});
+
 test('parseCapture: one-liner followed by prefixed lines', () => {
   const { cards } = parseCapture('a raíz de :: como consecuencia de\n= ~로 인해\n# tema:economia_trabajo');
   eq(cards.length, 1);
@@ -246,6 +267,7 @@ const CARD_KEYS = [
   'back',
   'ko',
   'example',
+  'exampleKo',
   'exampleSource',
   'exampleVerified',
   'register',
@@ -274,6 +296,7 @@ test('newCard: every contract key is present with defaults', () => {
   eq(c.register, '');
   eq(c.direction, 'both');
   eq(c.exampleVerified, false);
+  eq(c.exampleKo, '');
   eq(c.deletedAt, null);
   deepEq(c.tags, []);
   deepEq(c.colocaciones, []);

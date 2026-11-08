@@ -436,6 +436,13 @@ textarea:focus {
   color: #333;
 }
 
+/* Korean translation of the example, right under it. */
+.card-example-ko {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .gap {
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -769,6 +776,17 @@ h2.section-title-first {
   border-left: 3px solid var(--primary);
   border-radius: 0 10px 10px 0;
   font-size: 16px;
+}
+
+.review-example p {
+  margin: 0;
+}
+
+/* Korean translation of the example, inside the same box. */
+.review-example .review-example-ko {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
 }
 
 .review-extra {

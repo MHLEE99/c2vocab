@@ -22,9 +22,9 @@ c2vocab/
   .gitattributes      LF on checkout for every text file (*.bat CRLF): the @release-* markers must survive
                       core.autocrlf=true; release.py and the pwa tests accept LF or CRLF anyway
   start.bat           double-click: python tools/serve.py 8080 + opens the browser
-  deploy.bat          double-click: stops with 'Nada que publicar' when git status is clean and release.py --check
-                      passes (no new version for nothing); else tools/release.py -> git add/commit "Deploy <version>"
-                      -> git push (CRLF, UTF-8)
+  deploy.bat          double-click: stops with 'Nada que publicar' when git status is clean, release.py --check
+                      passes and origin/main already has every commit (no new version for nothing); else
+                      tools/release.py -> git add/commit "Deploy <version>" -> git push (CRLF, UTF-8)
   tools/serve.py      static server with Cache-Control: no-store and correct JS MIME type (--lan for phone testing)
   tools/release.py    stamps VERSION/PRECACHE in sw.js and APP_VERSION in js/version.js; --check exits 1 when stale;
                       --print-version (used by deploy.bat). Fails when a listed file or an icon is missing
@@ -59,9 +59,13 @@ c2vocab/
                       previewImportEnvelope/importEnvelope, existingCardMap, planCardImport/commitCardImport
     prompt.js         PURE: buildPrompt({tema, tipo, cantidad, inboxFronts}) - the text copied into Claude
     reminder.js       PURE: exportReminder / exportReminderText (Inicio banner after 7 days without export)
+    seeds.js          PURE: planSeeds(rows, allCards) for 'Cargar ejemplos': new seeds get the id 'seed:' + dupKey,
+                      a live card still showing the seed's example without exampleKo gets the translation, a
+                      seed whose id is in the Papelera is never re-added; home.js writes it with importCards
     tests.js          test entry: util/capture/db tests (db tests use database 'c2vocab_test'), calls run()
     tests/            harness.js (test/assert/eq/deepEq/throws/run) + srs, session, stats, merge, importer,
-                      backup (export/backup/db step 3), prompt, reminder, platform (pure), pwa (same-origin
+                      backup (export/backup/db step 3), prompt, reminder, seeds (planSeeds + the real
+                      seeds/base.json fetched), platform (pure), pwa (same-origin
                       fetches of manifest / icons / sw.js / version.js; FAILS when icons are missing), sw (the
                       source of sw.js evaluated with new Function against fake self / caches / fetch on a
                       sub-path scope: precache, activate, navigation, cache-first, seeds, SKIP_WAITING) .test.js
@@ -84,7 +88,8 @@ c2vocab/
       quickadd.js     bottom-sheet quick add with live preview
       explorar.js     search + filters + list + inline edit + soft delete
       papelera.js     deleted cards with Restaurar
-  seeds/base.json     20 example cards loaded by 'Cargar ejemplos' (array of partial cards, or {cards:[...]})
+  seeds/base.json     20 example cards loaded by 'Cargar ejemplos' (array of partial cards, or {cards:[...]});
+                      every card carries exampleKo (Korean translation of the example)
   vendor/dexie.min.js Dexie 4.0.11 UMD build (pinned; defines window.Dexie)
   docs/plan.json      the full design plan (steps 1-12)
   docs/PROMPT.md      the Claude prompt (mirror of js/prompt.js) + the weekly routine, in Korean
@@ -121,11 +126,14 @@ c2vocab/
   `headers`, `destination`, `cache`, `clone()`): navigation requests in the harness are plain objects because
   `new Request(url, { mode: 'navigate' })` throws in browsers. New globals in sw.js must be added to `SHADOWED`.
 - Deployment routine (the learner does it): double-click `deploy.bat` -> stops with 'Nada que publicar' when
-  `git status --porcelain` is empty and `release.py --check` passes (a second click must not push an identical
-  app with a new VERSION) -> otherwise `tools/release.py` stamps the version and the precache list -> commit
+  `git status --porcelain` is empty, `release.py --check` passes and origin/main has every commit (a second
+  click must not push an identical app with a new VERSION) -> otherwise `tools/release.py` stamps the version and the precache list -> commit
   "Deploy <version>" -> push -> GitHub Pages (main, root) publishes https://mhlee99.github.io/c2vocab/ in 1-2
-  minutes. Export files (`c2vocab-*.json`) are git-ignored anywhere in the tree so `git add -A` never publishes
-  one. Agents never run `deploy.bat` or git for the learner.
+  minutes. It also publishes when the tree is clean but `origin/main` lacks commits (a step committed by an
+  agent): the stamp is always renewed, so phones always see the update banner. Export files (`c2vocab-*.json`)
+  are git-ignored anywhere in the tree so `git add -A` never publishes one. Agents never run `deploy.bat` or
+  `git push` for the learner; a finished step is committed with a descriptive message after
+  `python tools/release.py` (so `--check` passes) and deploy.bat publishes it.
 - iOS keeps separate storage for a Safari tab and for the installed home-screen app. On an iOS tab Inicio shows
   the install banner (Safari: share button steps; other iOS browsers/webviews: open in Safari) and, when the
   database is empty, the onboarding banner WITHOUT an Importar button ('install-first'): the import happens
@@ -192,6 +200,15 @@ c2vocab/
   Enriquecer (fill empty fields only, tags union) / Sobrescribir (replace content, keep srs and history).
   A row's type replaces the existing card's type only when the row itself carried it (`row.typeExplicit`
   from `classifyRows`), never when it is just 'Tipo por defecto' / 'otro'.
+- `exampleKo` (Korean translation of the example, added 2026-11-08) belongs to its sentence: Enriquecer fills
+  it only together with the example or when both examples are the same text (same rule as `exampleSource`,
+  `EXAMPLE_COMPANIONS` in importer.js); Sobrescribir clears it when the example changes and the row brings no
+  translation. Rows stored before the key existed lack it: `hydrateCard` fills '', the views treat a missing
+  value as empty (`card.exampleKo || ''`), `verify_export.py` only type-checks it. Never backfill stored rows
+  (a content edit would bump `updatedAt` and win every merge).
+- 'Cargar ejemplos' = `planSeeds` (js/seeds.js, pure) + `importCards` (ONE transaction): new seeds get the id
+  'seed:' + dupKey; a live card is left alone unless it still shows the seed's example without `exampleKo`
+  (then it receives the translation); a seed whose 'seed:' id sits in the Papelera is never re-added.
 - `parseImport` tries the whole text as JSON BEFORE looking for a Markdown fence (a ``` inside a card's
   notes must not cut an export file apart); any object with `app: 'c2vocab'` is an envelope.
 - Importar commits only the preview that matches the current inputs (`inputKey()` in `ui/importar.js`):
@@ -213,6 +230,7 @@ c2vocab/
   back: string ('' allowed only while status==='inbox'),
   ko: string,
   example: string (may contain [[gap]] markers),
+  exampleKo: string (Korean translation of the example; '' when none; rows stored before 2026-11-08 may lack the key),
   exampleSource: string ('' | 'redactado' | free text),
   exampleVerified: boolean (false),
   register: ''|'culto'|'neutro'|'coloquial'|'vulgar',
@@ -248,11 +266,11 @@ File name: `c2vocab-YYYY-MM-DD-<deviceName>.json`. Check a file with `python too
 ## Import JSON contract (files under imports/, or text pasted into Importar)
 
 A JSON array of partial cards (or `{ "cards": [...] }`). Only `front` is required. Keys:
-`front, back, ko, example ([[gap]] markers), exampleSource ('redactado' for invented examples), type,
-register, region, tags (array or string), colocaciones (array, or string split on ';'), equivalentes
-([{texto, registro}] or strings), contraste, source, notes, direction`. Spanish aliases are accepted
-(`lema/expresión`, `definición/significado`, `ejemplo`, `tipo`, `registro`, `etiquetas`, `coreano`, `fuente`,
-`notas`). `type` is matched leniently ('locución', 'falso amigo', 'verbo + prep.'); unknown -> 'otro' with a
+`front, back, ko, example ([[gap]] markers), exampleKo (Korean translation of the example), exampleSource
+('redactado' for invented examples), type, register, region, tags (array or string), colocaciones (array, or
+string split on ';'), equivalentes ([{texto, registro}] or strings), contraste, source, notes, direction`.
+Spanish aliases are accepted (`lema/expresión`, `definición/significado`, `ejemplo`,
+`ejemploKo/ejemploCoreano/traducciónEjemplo`, `tipo`, `registro`, `etiquetas`, `coreano`, `fuente`, `notas`). `type` is matched leniently ('locución', 'falso amigo', 'verbo + prep.'); unknown -> 'otro' with a
 warning. `id`, `createdAt`, `updatedAt`, `deletedAt`, `srs`, `status` are ignored. Also recognised: a
 Markdown-fenced array, an array with prose around it, TSV (header row or positional
 front/back/example/type/tags), pipe lines `front | back | example | tags`, and the quick-add mini-language.
@@ -269,8 +287,9 @@ backups: '++id, createdAt'   rows: { id, createdAt, reason, json (envelope strin
 
 ## Quick-add mini-language (capture.js)
 
-Entries separated by blank lines. Line 1 = front (or `front :: back | example`). Then `: back`, `= ko`,
-`> example`, `# tags`, `@ source`; unknown lines append to back. Front-only entries become `status: 'inbox'`.
+Entries separated by blank lines. Line 1 = front (or `front :: back | example | exampleKo`). Then `: back`,
+`= ko`, `> example`, `>> exampleKo`, `# tags`, `@ source`; unknown lines append to back. Front-only entries
+become `status: 'inbox'`.
 
 ## How to run / test
 

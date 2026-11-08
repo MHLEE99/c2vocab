@@ -36,6 +36,7 @@ Devuelve ÚNICAMENTE un array JSON válido (sin texto antes ni después, sin com
 - "back": definición monolingüe en español, clara y precisa, de 25 palabras como máximo. No repitas la expresión dentro de la definición.
 - "ko": equivalente o glosa en coreano, de 6 palabras como máximo.
 - "example": una oración natural de 15 a 35 palabras, propia de un texto de nivel C2, con la expresión marcada entre dobles corchetes [[...]] tal como aparece (conjugada o flexionada si hace falta). Para el tipo "verbo_prep" marca solo la preposición.
+- "exampleKo": traducción natural del ejemplo completo al coreano (una oración, no palabra por palabra).
 - "exampleSource": siempre "redactado". No inventes citas ni atribuyas el ejemplo a autores, periódicos u obras.
 - "type": uno de estos identificadores exactos: locucion | colocacion | refran | marcador | falso_amigo | verbo_prep | variante | expresion | lexico | estructura | otro.
 - "register": culto | neutro | coloquial | vulgar.
@@ -48,7 +49,7 @@ Devuelve ÚNICAMENTE un array JSON válido (sin texto antes ni después, sin com
 
 REGLAS
 - No repitas expresiones ni incluyas dos variantes triviales de la misma.
-- Todo el contenido en español, excepto "ko".
+- Todo el contenido en español, excepto "ko" y "exampleKo".
 - Comillas dobles rectas, sin comas finales: el JSON debe poder leerse con JSON.parse.
 ```
 
@@ -70,6 +71,7 @@ a regañadientes
 | `back` | 스페인어 정의 (25단어 이내) |
 | `ko` | 한국어 뜻 (6단어 이내) |
 | `example` | 예문. 표현 부분은 `[[...]]` 로 표시 (복습 화면에서 빈칸이 됨) |
+| `exampleKo` | 예문의 한국어 해석 (복습 화면에서 예문 아래에 표시) |
 | `exampleSource` | 항상 `redactado` (지어낸 예문) |
 | `type` | 11가지 유형 중 하나 |
 | `register` | culto / neutro / coloquial / vulgar |
@@ -85,3 +87,4 @@ a regañadientes
 같은 형식(위 키를 가진 객체들의 JSON 배열)으로 직접 파일을 만들어 `imports/` 폴더에 두었다가 Importar의
 파일 선택으로 불러와도 됩니다. `id`, `status`, `srs`, 날짜 값은 적어도 무시되며, 가져온 카드는 항상 새 카드로 시작합니다.
 탭으로 구분한 표(엑셀에서 복사)나 `표현 | 정의 | 예문 | 태그` 형식의 줄도 인식합니다.
+`exampleKo` 는 `ejemploKo`, `ejemploCoreano`, `traduccionEjemplo` 라고 적어도 알아봅니다.

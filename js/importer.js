@@ -39,6 +39,7 @@ const CANONICAL_FIELDS = [
   'back',
   'ko',
   'example',
+  'exampleKo',
   'exampleSource',
   'exampleVerified',
   'type',
@@ -63,6 +64,11 @@ const ALIASES = {
   definicion: 'back',
   significado: 'back',
   ejemplo: 'example',
+  ejemploko: 'exampleKo',
+  ejemplocoreano: 'exampleKo',
+  traduccionejemplo: 'exampleKo',
+  traducciondelejemplo: 'exampleKo',
+  exampletranslation: 'exampleKo',
   tipo: 'type',
   registro: 'register',
   etiquetas: 'tags',
@@ -160,7 +166,7 @@ export function normalizeRow(raw, index) {
   }
 
   const card = {};
-  for (const field of ['front', 'back', 'ko', 'example', 'exampleSource', 'region', 'contraste', 'source', 'notes']) {
+  for (const field of ['front', 'back', 'ko', 'example', 'exampleKo', 'exampleSource', 'region', 'contraste', 'source', 'notes']) {
     if (field in found) card[field] = cleanText(found[field]);
   }
 
@@ -316,6 +322,7 @@ function parseCaptura(text) {
     if (c.back) card.back = c.back;
     if (c.ko) card.ko = c.ko;
     if (c.example) card.example = c.example;
+    if (c.exampleKo) card.exampleKo = c.exampleKo;
     if (c.source) card.source = c.source;
     if (c.tags && c.tags.length > 0) card.tags = c.tags;
     return { index: i, card, warnings: [] };
@@ -487,7 +494,9 @@ export function classifyRows(rows, existing, defaults = {}) {
 
 // ------------------------------------------------------------ patches for duplicates
 
-const STRING_FIELDS = ['back', 'ko', 'example', 'exampleSource', 'register', 'region', 'contraste', 'source', 'notes'];
+const STRING_FIELDS = ['back', 'ko', 'example', 'exampleKo', 'exampleSource', 'register', 'region', 'contraste', 'source', 'notes'];
+// Fields that describe the example sentence itself: they only make sense next to THAT sentence.
+const EXAMPLE_COMPANIONS = ['exampleKo', 'exampleSource'];
 const LIST_FIELDS = ['colocaciones', 'equivalentes'];
 
 function isEmptyText(v) {
@@ -517,18 +526,20 @@ export function enrichPatch(existingCard, incoming, options) {
   const patch = {};
 
   for (const field of STRING_FIELDS) {
-    if (field === 'exampleSource') continue; // handled together with the example
+    if (EXAMPLE_COMPANIONS.includes(field)) continue; // handled together with the example
     if (isEmptyText(have[field]) && !isEmptyText(inc[field])) patch[field] = String(inc[field]).trim();
   }
   // A front-only inbox card has no real type yet (it got the quick-add default): take the incoming one.
   if (typeExplicit && have.status === 'inbox' && isEmptyText(have.back) && 'back' in patch) {
     if (TYPE_IDS.includes(inc.type) && inc.type !== have.type) patch.type = inc.type;
   }
-  // exampleSource describes the example: fill it only when the example comes from the
-  // incoming card too (or is the same text), never to label the learner's own example.
-  if (isEmptyText(have.exampleSource) && !isEmptyText(inc.exampleSource)) {
-    const sameExample = !isEmptyText(have.example) && String(have.example).trim() === String(inc.example || '').trim();
-    if ('example' in patch || sameExample) patch.exampleSource = String(inc.exampleSource).trim();
+  // exampleKo (translation) and exampleSource describe the example: fill them only when the
+  // example comes from the incoming card too (or is the same text), never to label or
+  // "translate" the learner's own, different example.
+  const sameExample = !isEmptyText(have.example) && String(have.example).trim() === String(inc.example || '').trim();
+  for (const field of EXAMPLE_COMPANIONS) {
+    if (!isEmptyText(have[field]) || isEmptyText(inc[field])) continue;
+    if ('example' in patch || sameExample) patch[field] = String(inc[field]).trim();
   }
 
   for (const field of LIST_FIELDS) {
@@ -561,6 +572,8 @@ export function overwritePatch(existingCard, incoming, options) {
     const value = String(inc[field]).trim();
     if (value !== have[field]) patch[field] = value;
   }
+  // A new example without its own translation must not keep the translation of the OLD example.
+  if ('example' in patch && isEmptyText(inc.exampleKo) && !isEmptyText(have.exampleKo)) patch.exampleKo = '';
   for (const field of LIST_FIELDS) {
     const list = listOf(inc[field]);
     if (list.length > 0 && !sameJson(list, listOf(have[field]))) patch[field] = list.slice();

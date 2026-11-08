@@ -19,7 +19,7 @@ test('prompt: lists the 11 type ids, every key of the contract and the fixed rul
   const p = buildPrompt({ tema: '', tipo: 'cualquiera', cantidad: 20 });
   eq(TYPE_IDS.length, 11);
   for (const id of TYPE_IDS) assert(p.includes(id), 'type id ' + id);
-  for (const key of ['front', 'back', 'ko', 'example', 'exampleSource', 'type', 'register', 'region', 'colocaciones', 'equivalentes', 'contraste', 'tags', 'notes']) {
+  for (const key of ['front', 'back', 'ko', 'example', 'exampleKo', 'exampleSource', 'type', 'register', 'region', 'colocaciones', 'equivalentes', 'contraste', 'tags', 'notes']) {
     assert(p.includes('"' + key + '"'), 'key ' + key);
   }
   assert(p.includes('[[...]]'), 'gap marker');

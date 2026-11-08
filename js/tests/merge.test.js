@@ -135,6 +135,7 @@ test('merge: hydrateCard needs id and front, fills defaults, keeps timestamps an
   eq(c.srs.rec.ease, 2.5, 'srs completed');
   deepEq(c.srs.prod, initialState());
   eq(c.exampleVerified, false);
+  eq(c.exampleKo, '', 'exampleKo was added later: a row without it reads as empty');
   deepEq(c.colocaciones, []);
   deepEq(c.equivalentes, []);
   eq(c.notes, '');

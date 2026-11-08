@@ -1,10 +1,11 @@
 // Quick-add mini-language parser. Pure: no DOM, no database, unit-tested in js/tests.js.
 //
 // Text is split into entries by one or more blank lines. Inside an entry:
-//   line 1            -> front   (or "front :: back | example" one-liner)
+//   line 1            -> front   (or "front :: back | example | exampleKo" one-liner)
 //   : texto           -> back    (repeats append with a space)
 //   = texto           -> ko
 //   > texto           -> example (repeats append with a space)
+//   >> texto          -> exampleKo (Korean translation of the example; repeats append)
 //   # tag1 tag2, tag3 -> tags    (repeats merge)
 //   @ texto           -> source
 //   anything else     -> appended to back
@@ -12,6 +13,8 @@
 // Returned cards are PARTIAL: db.newCard() fills id, timestamps, srs, status...
 
 const PREFIX_RE = /^([:=>#@])\s*(.*)$/;
+// Checked before PREFIX_RE: a line starting with '>>' is the example's Korean translation.
+const EXAMPLE_KO_RE = /^>>\s*(.*)$/;
 const ONE_LINER_RE = /\s*::\s*/;
 
 /** Split a tag string on whitespace/commas, strip leading '#', lowercase, dedupe. */
@@ -67,7 +70,7 @@ export function parseCapture(text, defaults = {}) {
     if (lines.length === 0) continue;
     entryNumber += 1;
 
-    const entry = { front: '', back: '', ko: '', example: '', tags: [], source: '' };
+    const entry = { front: '', back: '', ko: '', example: '', exampleKo: '', tags: [], source: '' };
     const first = lines[0];
     const rest = lines.slice(1);
 
@@ -78,22 +81,24 @@ export function parseCapture(text, defaults = {}) {
     }
 
     if (ONE_LINER_RE.test(first)) {
-      // "front :: back | example"
+      // "front :: back | example | exampleKo" (the last two cells are optional)
       const parts = first.split(ONE_LINER_RE);
       entry.front = parts[0].trim();
       const after = parts.slice(1).join(' :: ');
-      const pipe = after.indexOf('|');
-      if (pipe >= 0) {
-        entry.back = after.slice(0, pipe).trim();
-        entry.example = after.slice(pipe + 1).trim();
-      } else {
-        entry.back = after.trim();
-      }
+      const cells = after.split('|');
+      entry.back = cells[0].trim();
+      if (cells.length > 1) entry.example = cells[1].trim();
+      if (cells.length > 2) entry.exampleKo = cells.slice(2).join('|').trim();
     } else {
       entry.front = first;
     }
 
     for (const line of rest) {
+      const ko = EXAMPLE_KO_RE.exec(line);
+      if (ko) {
+        entry.exampleKo = appendWithSpace(entry.exampleKo, ko[1].trim());
+        continue;
+      }
       const m = PREFIX_RE.exec(line);
       if (!m) {
         entry.back = appendWithSpace(entry.back, line);
@@ -133,6 +138,7 @@ export function parseCapture(text, defaults = {}) {
       back: entry.back,
       ko: entry.ko,
       example: entry.example,
+      exampleKo: entry.exampleKo,
       source: entry.source,
       tags: normalizeTagList(d.tags.concat(entry.tags)),
       type: d.type,
@@ -147,9 +153,9 @@ export function parseCapture(text, defaults = {}) {
 /** Korean help text shown under the quick-add textarea. */
 export const SYNTAX_HELP_KO = [
   '첫 줄: 표현 (예: hacer hincapié en)',
-  ': 정의 (스페인어)   = 한국어 뜻   > 예문 ([[빈칸]] 표시 가능)',
+  ': 정의 (스페인어)   = 한국어 뜻   > 예문 ([[빈칸]] 표시 가능)   >> 예문 해석',
   '# 태그 (띄어쓰기/쉼표로 구분)   @ 출처',
-  '한 줄로: 표현 :: 정의 | 예문',
+  '한 줄로: 표현 :: 정의 | 예문 | 예문 해석',
   '빈 줄로 여러 항목을 구분합니다. 표현만 적으면 Bandeja(대기함)에 저장됩니다.',
 ].join('\n');
 
@@ -159,6 +165,7 @@ export const SYNTAX_PLACEHOLDER = [
   ': subrayar la importancia de algo',
   '= 강조하다',
   '> El ministro [[hizo hincapié en]] la reforma.',
+  '>> 장관은 개혁을 강조했다.',
   '# tema:politica_sociedad',
   '',
   'a raíz de :: como consecuencia de | [[A raíz de]] la crisis, cerraron.',

@@ -37,6 +37,9 @@ STRING_KEYS = [
 CARD_KEYS = STRING_KEYS + [
     "exampleVerified", "tags", "colocaciones", "equivalentes", "deletedAt", "srs",
 ]
+# Keys added after the first release: a card stored before then may lack them (the app reads a
+# missing value as ''), so they are only type-checked when present.
+OPTIONAL_STRING_KEYS = ["exampleKo"]  # Korean translation of the example (added 2026-11-08)
 SRS_KEYS = ["state", "due", "intervalDays", "ease", "step", "reps", "lapses", "lastReviewAt"]
 
 ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
@@ -104,7 +107,7 @@ def check_card(index, card, problems):
     for key in CARD_KEYS:
         if key not in card:
             problems.append(f"{label}: falta la clave '{key}'")
-    for key in STRING_KEYS:
+    for key in STRING_KEYS + OPTIONAL_STRING_KEYS:
         if key in card and not isinstance(card[key], str):
             problems.append(f"{label}: '{key}' debe ser texto")
 

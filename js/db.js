@@ -145,6 +145,7 @@ export function newCard(partial = {}) {
     back: cleanString(p.back).trim(),
     ko: cleanString(p.ko).trim(),
     example: cleanString(p.example).trim(),
+    exampleKo: cleanString(p.exampleKo).trim(),
     exampleSource: cleanString(p.exampleSource).trim(),
     exampleVerified: p.exampleVerified === true,
     register: p.register,
@@ -174,6 +175,7 @@ export const CARD_KEYS = [
   'back',
   'ko',
   'example',
+  'exampleKo',
   'exampleSource',
   'exampleVerified',
   'register',
@@ -205,7 +207,8 @@ const EPOCH_ISO = '1970-01-01T00:00:00.000Z';
  * Returns a full contract card, or null when the id or the front is missing.
  * id, createdAt, updatedAt, deletedAt and every UNKNOWN extra key are kept as they are;
  * missing contract keys get their defaults, enums are coerced like in newCard and
- * srs is completed over initialSrs().
+ * srs is completed over initialSrs(). (Rows stored before a key existed, e.g. exampleKo
+ * added 2026-11-08, are only completed here: listCards() returns the rows as stored.)
  */
 export function hydrateCard(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -223,6 +226,7 @@ export function hydrateCard(raw) {
     back: cleanString(raw.back).trim(),
     ko: cleanString(raw.ko).trim(),
     example: cleanString(raw.example).trim(),
+    exampleKo: cleanString(raw.exampleKo).trim(),
     exampleSource: cleanString(raw.exampleSource).trim(),
     exampleVerified: raw.exampleVerified === true,
     register: raw.register,

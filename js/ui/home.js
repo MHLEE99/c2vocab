@@ -1,6 +1,7 @@
 // Inicio: today's study numbers, Estudiar buttons, library counts, seed loader, quick add.
 
-import { listCards, listReviews, getSettings, getMeta, setMeta, addCards, newCard, existingKeys, dupKey } from '../db.js';
+import { listCards, listReviews, getSettings, getMeta, setMeta, allCardsIncludingDeleted, importCards } from '../db.js';
+import { planSeeds } from '../seeds.js';
 import { fmtDate, nowIso } from '../util.js';
 import { queueInfo, isEligible } from '../session.js';
 import { countsToday, streak } from '../stats-lite.js';
@@ -138,7 +139,7 @@ export async function render(container) {
     h(
       'p',
       { class: 'hint-ko' },
-      "'Añadir' 또는 오른쪽 아래 '+' 버튼으로 표현을 빠르게 저장합니다.\n'Cargar ejemplos'는 미리 준비된 예시 카드 20장을 넣어 줍니다(이미 있는 카드는 건너뜁니다)."
+      "'Añadir' 또는 오른쪽 아래 '+' 버튼으로 표현을 빠르게 저장합니다.\n'Cargar ejemplos'는 미리 준비된 예시 카드 20장을 넣어 줍니다(이미 있는 카드는 건너뛰고, 예문 해석만 비어 있으면 채워 줍니다)."
     )
   );
 }
@@ -272,7 +273,7 @@ function emptyDbBanner(kind) {
   );
 }
 
-/** Fetch ./seeds/base.json and add the rows that are not already in the database. */
+/** Fetch ./seeds/base.json and write what planSeeds (js/seeds.js) decides: new seeds, missing example translations. */
 async function loadSeeds(button) {
   button.disabled = true;
   try {
@@ -282,36 +283,17 @@ async function loadSeeds(button) {
     const rows = Array.isArray(json) ? json : Array.isArray(json && json.cards) ? json.cards : [];
     if (rows.length === 0) throw new Error('el archivo no contiene tarjetas');
 
-    const keys = await existingKeys();
-    const toAdd = [];
-    let existing = 0;
-    let invalid = 0;
-    for (const row of rows) {
-      if (!row || typeof row.front !== 'string' || row.front.trim() === '') {
-        invalid += 1;
-        continue;
-      }
-      // Seeds never carry ids/timestamps/srs of another device: let newCard assign fresh ones.
-      const { id, createdAt, updatedAt, deletedAt, srs, ...content } = row;
-      // Build the card first so the duplicate key uses the same coerced type that
-      // newCard stores (an unknown row.type becomes 'otro' on disk).
-      const card = newCard(content);
-      const key = dupKey(card.front, card.type);
-      if (keys.has(key)) {
-        existing += 1;
-        continue;
-      }
-      keys.add(key); // also skips duplicates inside the seed file itself
-      // Deterministic id: the same seed loaded on two devices is ONE card after a merge
-      // (cards merge by id; a random id per device would leave two copies).
-      card.id = 'seed:' + key;
-      toAdd.push(card);
-    }
-    const added = await addCards(toAdd);
-    let msg = `${added} tarjetas añadidas, ${existing} ya existían`;
-    if (invalid) msg += `, ${invalid} inválidas`;
+    // Pure plan: new seeds (ids 'seed:' + dupKey), the Korean translation for cards that still
+    // show the seed's example without one, nothing for seeds the learner deleted.
+    const plan = planSeeds(rows, await allCardsIncludingDeleted());
+    await importCards({ toAdd: plan.toAdd, toUpdate: plan.toUpdate }); // ONE transaction
+    const c = plan.counts;
+    let msg = `${c.added} tarjetas añadidas, ${c.existing} ya existían`;
+    if (c.updated) msg += `, ${c.updated} con la traducción del ejemplo añadida`;
+    if (c.trashed) msg += `, ${c.trashed} en la papelera`;
+    if (c.invalid) msg += `, ${c.invalid} inválidas`;
     toast(msg);
-    if (added > 0) emitCardsChanged();
+    if (c.added > 0 || c.updated > 0) emitCardsChanged();
   } catch (err) {
     console.error(err);
     toast('No se pudieron cargar los ejemplos: ' + (err && err.message ? err.message : err));

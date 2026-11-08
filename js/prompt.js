@@ -67,6 +67,7 @@ export function buildPrompt(options = {}) {
     '- "back": definición monolingüe en español, clara y precisa, de 25 palabras como máximo. No repitas la expresión dentro de la definición.',
     '- "ko": equivalente o glosa en coreano, de 6 palabras como máximo.',
     '- "example": una oración natural de 15 a 35 palabras, propia de un texto de nivel C2, con la expresión marcada entre dobles corchetes [[...]] tal como aparece (conjugada o flexionada si hace falta). Para el tipo "verbo_prep" marca solo la preposición.',
+    '- "exampleKo": traducción natural del ejemplo completo al coreano (una oración, no palabra por palabra).',
     '- "exampleSource": siempre "redactado". No inventes citas ni atribuyas el ejemplo a autores, periódicos u obras.',
     '- "type": uno de estos identificadores exactos: ' + typeList + '.',
     '- "register": culto | neutro | coloquial | vulgar.',
@@ -79,7 +80,7 @@ export function buildPrompt(options = {}) {
     '',
     'REGLAS',
     '- No repitas expresiones ni incluyas dos variantes triviales de la misma.',
-    '- Todo el contenido en español, excepto "ko".',
+    '- Todo el contenido en español, excepto "ko" y "exampleKo".',
     '- Comillas dobles rectas, sin comas finales: el JSON debe poder leerse con JSON.parse.',
   ];
 

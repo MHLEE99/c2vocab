@@ -228,7 +228,17 @@ export async function render(container, params = {}) {
     const answer = h('div', { class: 'review-answer' });
     answer.appendChild(h('p', { class: 'review-back' }, card.back));
     if (card.ko) answer.appendChild(h('p', { class: 'review-ko' }, card.ko));
-    if (card.example) answer.appendChild(h('p', { class: 'review-example', html: renderExampleHtml(card.example) }));
+    if (card.example) {
+      // The Spanish sentence with its Korean translation underneath (when the card has one).
+      answer.appendChild(
+        h(
+          'div',
+          { class: 'review-example' },
+          h('p', { class: 'review-example-es', html: renderExampleHtml(card.example) }),
+          card.exampleKo ? h('p', { class: 'review-example-ko' }, card.exampleKo) : null
+        )
+      );
+    }
     if (card.colocaciones && card.colocaciones.length) {
       answer.appendChild(extraLine('Colocaciones', card.colocaciones.join(' · ')));
     }
