@@ -62,7 +62,9 @@ c2vocab/
     tests.js          test entry: util/capture/db tests (db tests use database 'c2vocab_test'), calls run()
     tests/            harness.js (test/assert/eq/deepEq/throws/run) + srs, session, stats, merge, importer,
                       backup (export/backup/db step 3), prompt, reminder, platform (pure), pwa (same-origin
-                      fetches of manifest / icons / sw.js / version.js; FAILS when icons are missing) .test.js
+                      fetches of manifest / icons / sw.js / version.js; FAILS when icons are missing), sw (the
+                      source of sw.js evaluated with new Function against fake self / caches / fetch on a
+                      sub-path scope: precache, activate, navigation, cache-first, seeds, SKIP_WAITING) .test.js
     ui/
       components.js   h() DOM builder, toast, openSheet/closeSheet, chip, badge, emitCardsChanged
       home.js         Inicio: export reminder banner, iOS install banner (installHint, snooze meta
@@ -111,6 +113,13 @@ c2vocab/
   automatic `skipWaiting`: the page shows the 'Nueva versión disponible' banner and sends
   `{ type: 'SKIP_WAITING' }`; the reload on `controllerchange` happens once and never while `#/estudiar` has a
   running session (the banner stays, 'Actualizar' reloads).
+- `sw.js` must stay harness-friendly: `js/tests/sw.test.js` runs its source inside `new Function` with every
+  worker global replaced by a fake (the acceptance browser cannot register a real worker). So: worker globals
+  ONLY through explicit `self.*` (`self.addEventListener`, `self.registration`, `self.clients`,
+  `self.skipWaiting`, `self.location`; a bare `addEventListener(...)` is `undefined` in the sandbox, `globalThis`
+  / `window` are forbidden, and a test checks the source), and read requests only through standard `Request` fields (`url`, `method`, `mode`,
+  `headers`, `destination`, `cache`, `clone()`): navigation requests in the harness are plain objects because
+  `new Request(url, { mode: 'navigate' })` throws in browsers. New globals in sw.js must be added to `SHADOWED`.
 - Deployment routine (the learner does it): double-click `deploy.bat` -> stops with 'Nada que publicar' when
   `git status --porcelain` is empty and `release.py --check` passes (a second click must not push an identical
   app with a new VERSION) -> otherwise `tools/release.py` stamps the version and the precache list -> commit

@@ -20,6 +20,8 @@ import './tests/reminder.test.js';
 // Step 4 test files (PWA: platform rules, manifest / icons / service worker files).
 import './tests/platform.test.js';
 import './tests/pwa.test.js';
+// Service worker logic (sw.js source evaluated against fake self / caches / fetch, no real worker).
+import './tests/sw.test.js';
 
 // ------------------------------------------------------------ util.js
 
